@@ -82,6 +82,7 @@ public class F1Servicio {
      * @return Lista de pilotos
      */
     public List<Piloto> getPilotos() {
+        PilotoDAO pilotoDAO = new PilotoDAO();
         return pilotoDAO.findAll();
     }
 
