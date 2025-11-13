@@ -379,7 +379,14 @@ public class Main {
         }
 
         System.out.println("\nCarreras disponibles:");
-        for (int i = 0; i < carrerasEditables.size(); i++)
+        for (int i = 0; i < carrerasEditables.size(); i++) {
+            Carrera c = carrerasEditables.get(i);
+            System.out.printf("%d. %s - %s (%s)%n",
+                    (i + 1),
+                    c.getNombreGp(),
+                    c.getCircuito() != null ? c.getCircuito().getNombre() : "Sin circuito",
+                    c.getFecha());
+        }
 
         System.out.print("\nSeleccione el número de carrera (0 para cancelar): ");
         int seleccion = leerOpcion();
@@ -449,6 +456,7 @@ public class Main {
 
                 if (dto.getRetirado()) {
                     System.out.print("   Motivo de retiro: ");
+                    dto.setMotivoRetiro(leerTexto());
                     dto.setMotivoRetiro(leerTexto());
                 } else {
                     if (posicion <= 10) {
