@@ -11,7 +11,7 @@ public class ConfiguracionTemporada {
 
     // Fecha de congelación del proyecto
     // Después de esta fecha, se pueden ingresar resultados manualmente
-    public static final LocalDate FECHA_CONGELACION = LocalDate.of(2025, 10, 7);
+    public static final LocalDate FECHA_CONGELACION = LocalDate.of(2025, 10, 27);
 
     /**
      * Verifica si una fecha está después de la fecha de congelación.
