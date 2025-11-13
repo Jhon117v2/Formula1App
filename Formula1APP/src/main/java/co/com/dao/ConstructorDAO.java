@@ -7,6 +7,7 @@ import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,6 +81,10 @@ public class ConstructorDAO {
     public Optional<Constructor> findByNombre(String nombre) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            if (nombre == null || nombre.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo Optional vacío");
+                return Optional.empty();
+            }
             TypedQuery<Constructor> query = em.createQuery(
                     "SELECT c FROM Constructor c LEFT JOIN FETCH c.pilotos " +
                             "WHERE LOWER(c.nombre) LIKE LOWER(:nombre)",
@@ -113,6 +118,10 @@ public class ConstructorDAO {
     public List<Constructor> findByNacionalidad(String nacionalidad) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            if (nacionalidad == null || nacionalidad.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
             TypedQuery<Constructor> query = em.createQuery(
                     "SELECT DISTINCT c FROM Constructor c LEFT JOIN FETCH c.pilotos " +
                             "WHERE LOWER(c.nacionalidad) = LOWER(:nacionalidad) ORDER BY c.nombre",
@@ -163,9 +172,33 @@ public class ConstructorDAO {
     public Constructor update(Constructor constructor) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            // Validación de parámetros
+            if (constructor == null) {
+                throw new RuntimeException("El constructor no puede ser nulo");
+            }
+            if (constructor.getId() == null) {
+                throw new RuntimeException("El constructor debe tener un ID válido para actualizar");
+            }
+
             em.getTransaction().begin();
-            Constructor updated = em.merge(constructor);
+
+            // Verificar que el constructor existe antes de actualizar
+            Constructor existingConstructor = em.find(Constructor.class, constructor.getId());
+            if (existingConstructor == null) {
+                em.getTransaction().rollback();
+                logger.warn("No se encontró constructor con ID: {}", constructor.getId());
+                throw new RuntimeException("No se puede actualizar un constructor que no existe (ID: " + constructor.getId() + ")");
+            }
+
+            // Actualizar los datos
+            existingConstructor.setNombre(constructor.getNombre());
+            if (constructor.getNacionalidad() != null) {
+                existingConstructor.setNacionalidad(constructor.getNacionalidad());
+            }
+
+            Constructor updated = em.merge(existingConstructor);
             em.getTransaction().commit();
+
             logger.info("Constructor actualizado exitosamente: {} (ID: {})",
                     updated.getNombre(), updated.getId());
             return updated;
@@ -173,7 +206,7 @@ public class ConstructorDAO {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-            logger.error("Error al actualizar constructor: " + constructor.getNombre(), e);
+            logger.error("Error al actualizar constructor: " + (constructor != null ? constructor.getNombre() : "null"), e);
             throw new RuntimeException("Error al actualizar constructor", e);
         } finally {
             JPAUtil.close(em);

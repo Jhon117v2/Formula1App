@@ -8,6 +8,7 @@ import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,10 +44,9 @@ public class CarreraDAO {
     /**
      * Obtiene las carreras de una temporada específica ordenadas por número de GP.
      *
-     * @param anio Año de la temporada
      * @return Lista de carreras de esa temporada
      */
-    public List<Carrera> findByTemporada(Integer anio) {
+    public List<Carrera> findByTemporada(Integer anio) {  // Renombrado lógicamente, pero puedes mantener el nombre si quieres
         EntityManager em = JPAUtil.getEntityManager();
         try {
             TypedQuery<Carrera> query = em.createQuery(
@@ -102,6 +102,12 @@ public class CarreraDAO {
     public List<Carrera> findByNombreGp(String nombre) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            // Validar entrada nula o vacía
+            if (nombre == null || nombre.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
+
             TypedQuery<Carrera> query = em.createQuery(
                     "SELECT c FROM Carrera c WHERE LOWER(c.nombreGp) LIKE LOWER(:nombre) ORDER BY c.fecha",
                     Carrera.class
@@ -125,6 +131,23 @@ public class CarreraDAO {
     public Carrera save(Carrera carrera) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            // Validación de campos obligatorios
+            if (carrera == null) {
+                throw new RuntimeException("La carrera no puede ser nula");
+            }
+            if (carrera.getNombreGp() == null || carrera.getNombreGp().trim().isEmpty()) {
+                throw new RuntimeException("El nombre del Gran Premio es obligatorio");
+            }
+            if (carrera.getFecha() == null) {
+                throw new RuntimeException("La fecha de la carrera es obligatoria");
+            }
+            if (carrera.getTemporada() == null) {
+                throw new RuntimeException("La temporada es obligatoria");
+            }
+            if (carrera.getCircuito() == null) {
+                throw new RuntimeException("El circuito es obligatorio");
+            }
+
             em.getTransaction().begin();
             em.persist(carrera);
             em.getTransaction().commit();

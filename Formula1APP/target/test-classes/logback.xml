@@ -1,0 +1,16 @@
+<configuration>
+    <!-- Nivel global de logs -->
+    <root level="ERROR">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Appender para consola -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Si quieres ver algo de tus propios logs (por ejemplo co.com) -->
+    <logger name="co.com" level="WARN" />
+</configuration>

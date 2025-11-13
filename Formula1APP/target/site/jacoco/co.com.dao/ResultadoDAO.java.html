@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResultadoDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.dao</a> &gt; <span class="el_source">ResultadoDAO.java</span></div><h1>ResultadoDAO.java</h1><pre class="source lang-java linenums">package co.com.dao;
+
+import co.com.model.Resultado;
+import co.com.util.JPAUtil;
+import co.com.util.JDBCUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+<span class="fc" id="L19">public class ResultadoDAO {</span>
+<span class="fc" id="L20">    private static final Logger logger = LoggerFactory.getLogger(ResultadoDAO.class);</span>
+
+    public List&lt;Resultado&gt; findByCarrera(Long carreraId) {
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        if (carreraId == null) {</span>
+<span class="fc" id="L24">            throw new RuntimeException(&quot;El ID de la carrera no puede ser nulo&quot;);</span>
+        }
+
+<span class="fc" id="L27">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L29">            TypedQuery&lt;Resultado&gt; query = em.createQuery(</span>
+                    &quot;SELECT r FROM Resultado r &quot; +
+                            &quot;JOIN FETCH r.piloto p &quot; +
+                            &quot;LEFT JOIN FETCH p.constructor &quot; +
+                            &quot;WHERE r.carrera.id = :carreraId &quot; +
+                            &quot;ORDER BY r.posicionFinal&quot;,
+                    Resultado.class
+            );
+<span class="fc" id="L37">            query.setParameter(&quot;carreraId&quot;, carreraId);</span>
+<span class="fc" id="L38">            return query.getResultList();</span>
+<span class="fc" id="L39">        } catch (Exception e) {</span>
+<span class="fc" id="L40">            logger.error(&quot;Error al listar resultados por carrera: &quot; + carreraId, e);</span>
+<span class="fc" id="L41">            throw new RuntimeException(&quot;Error al obtener resultados&quot;, e);</span>
+        } finally {
+<span class="fc" id="L43">            JPAUtil.close(em);</span>
+        }
+    }
+
+    public Resultado save(Resultado resultado) {
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (resultado == null) {</span>
+<span class="fc" id="L49">            throw new RuntimeException(&quot;El resultado no puede ser nulo&quot;);</span>
+        }
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (resultado.getCarrera() == null) {</span>
+<span class="fc" id="L52">            throw new RuntimeException(&quot;El resultado debe tener una carrera asociada&quot;);</span>
+        }
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (resultado.getPiloto() == null) {</span>
+<span class="fc" id="L55">            throw new RuntimeException(&quot;El resultado debe tener un piloto asociado&quot;);</span>
+        }
+
+<span class="fc" id="L58">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L60">            em.getTransaction().begin();</span>
+<span class="fc" id="L61">            em.persist(resultado);</span>
+<span class="fc" id="L62">            em.getTransaction().commit();</span>
+<span class="fc" id="L63">            return resultado;</span>
+<span class="fc" id="L64">        } catch (Exception e) {</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="fc" id="L66">                em.getTransaction().rollback();</span>
+            }
+<span class="fc" id="L68">            throw new RuntimeException(&quot;Error al guardar resultado&quot;, e);</span>
+        } finally {
+<span class="fc" id="L70">            JPAUtil.close(em);</span>
+        }
+    }
+
+    // Usando JDBC para consultas optimizadas de clasificación
+    public List&lt;Map&lt;String, Object&gt;&gt; getClasificacionPilotos(Integer anio) {
+<span class="fc" id="L76">        String sql = &quot;&quot;&quot;</span>
+            SELECT 
+                combined.id,
+                combined.nombre,
+                combined.dorsal,
+                combined.nacionalidad,
+                combined.constructor,
+                SUM(combined.puntos) AS total_puntos,
+                SUM(combined.victorias) AS victorias,
+                SUM(combined.podios) AS podios
+            FROM (
+                SELECT 
+                    p.id,
+                    p.nombre,
+                    p.dorsal,
+                    p.nacionalidad,
+                    con.nombre AS constructor,
+                    r.puntos_obtenidos AS puntos,
+                    CASE WHEN r.posicion_final = 1 THEN 1 ELSE 0 END AS victorias,
+                    CASE WHEN r.posicion_final &lt;= 3 THEN 1 ELSE 0 END AS podios
+                FROM piloto p 
+                JOIN resultado r ON r.piloto_id = p.id 
+                JOIN carrera c ON r.carrera_id = c.id 
+                JOIN temporada t ON c.temporada_id = t.id 
+                LEFT JOIN constructor con ON p.constructor_id = con.id
+                WHERE t.anio = ?
+                UNION ALL
+                SELECT 
+                    p.id,
+                    p.nombre,
+                    p.dorsal,
+                    p.nacionalidad,
+                    con.nombre AS constructor,
+                    rs.puntos_obtenidos AS puntos,
+                    0 AS victorias,
+                    0 AS podios
+                FROM piloto p 
+                JOIN resultado_sprint rs ON rs.piloto_id = p.id 
+                JOIN carrera c ON rs.carrera_id = c.id 
+                JOIN temporada t ON c.temporada_id = t.id 
+                LEFT JOIN constructor con ON p.constructor_id = con.id
+                WHERE t.anio = ?
+            ) AS combined 
+            GROUP BY combined.id, combined.nombre, combined.dorsal, combined.nacionalidad, combined.constructor
+            HAVING total_puntos &gt; 0
+            ORDER BY total_puntos DESC, victorias DESC, podios DESC
+        &quot;&quot;&quot;;
+
+<span class="fc" id="L124">        List&lt;Map&lt;String, Object&gt;&gt; clasificacion = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L126">        try (Connection conn = JDBCUtil.getConnection();</span>
+<span class="fc" id="L127">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+
+<span class="fc" id="L129">            stmt.setInt(1, anio);</span>
+<span class="fc" id="L130">            stmt.setInt(2, anio);</span>
+<span class="fc" id="L131">            ResultSet rs = stmt.executeQuery();</span>
+
+<span class="fc" id="L133">            int posicion = 1;</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            while (rs.next()) {</span>
+<span class="fc" id="L135">                Map&lt;String, Object&gt; pilotoData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L136">                pilotoData.put(&quot;posicion&quot;, posicion++);</span>
+<span class="fc" id="L137">                pilotoData.put(&quot;id&quot;, rs.getLong(&quot;id&quot;));</span>
+<span class="fc" id="L138">                pilotoData.put(&quot;nombre&quot;, rs.getString(&quot;nombre&quot;));</span>
+<span class="fc" id="L139">                pilotoData.put(&quot;dorsal&quot;, rs.getString(&quot;dorsal&quot;));</span>
+<span class="fc" id="L140">                pilotoData.put(&quot;nacionalidad&quot;, rs.getString(&quot;nacionalidad&quot;));</span>
+<span class="fc" id="L141">                pilotoData.put(&quot;constructor&quot;, rs.getString(&quot;constructor&quot;));</span>
+<span class="fc" id="L142">                pilotoData.put(&quot;puntos&quot;, rs.getBigDecimal(&quot;total_puntos&quot;));</span>
+<span class="fc" id="L143">                pilotoData.put(&quot;victorias&quot;, rs.getInt(&quot;victorias&quot;));</span>
+<span class="fc" id="L144">                pilotoData.put(&quot;podios&quot;, rs.getInt(&quot;podios&quot;));</span>
+<span class="fc" id="L145">                clasificacion.add(pilotoData);</span>
+<span class="fc" id="L146">            }</span>
+
+<span class="fc" id="L148">            logger.info(&quot;Clasificación de pilotos obtenida: {} pilotos&quot;, clasificacion.size());</span>
+<span class="fc" id="L149">            return clasificacion;</span>
+
+<span class="fc" id="L151">        } catch (Exception e) {</span>
+<span class="fc" id="L152">            logger.error(&quot;Error al obtener clasificación de pilotos&quot;, e);</span>
+<span class="fc" id="L153">            throw new RuntimeException(&quot;Error al obtener clasificación de pilotos&quot;, e);</span>
+        }
+    }
+
+    public List&lt;Map&lt;String, Object&gt;&gt; getClasificacionConstructores(Integer anio) {
+<span class="fc" id="L158">        String sql = &quot;&quot;&quot;</span>
+            SELECT 
+                combined.id,
+                combined.nombre,
+                combined.nacionalidad,
+                SUM(combined.puntos) AS total_puntos,
+                SUM(combined.victorias) AS victorias,
+                SUM(combined.podios) AS podios
+            FROM (
+                SELECT 
+                    con.id,
+                    con.nombre,
+                    con.nacionalidad,
+                    r.puntos_obtenidos AS puntos,
+                    CASE WHEN r.posicion_final = 1 THEN 1 ELSE 0 END AS victorias,
+                    CASE WHEN r.posicion_final &lt;= 3 THEN 1 ELSE 0 END AS podios
+                FROM constructor con 
+                JOIN piloto p ON p.constructor_id = con.id 
+                JOIN resultado r ON r.piloto_id = p.id 
+                JOIN carrera c ON r.carrera_id = c.id 
+                JOIN temporada t ON c.temporada_id = t.id 
+                WHERE t.anio = ?
+                UNION ALL
+                SELECT 
+                    con.id,
+                    con.nombre,
+                    con.nacionalidad,
+                    rs.puntos_obtenidos AS puntos,
+                    0 AS victorias,
+                    0 AS podios
+                FROM constructor con 
+                JOIN piloto p ON p.constructor_id = con.id 
+                JOIN resultado_sprint rs ON rs.piloto_id = p.id 
+                JOIN carrera c ON rs.carrera_id = c.id 
+                JOIN temporada t ON c.temporada_id = t.id 
+                WHERE t.anio = ?
+            ) AS combined 
+            GROUP BY combined.id, combined.nombre, combined.nacionalidad
+            HAVING total_puntos &gt; 0
+            ORDER BY total_puntos DESC, victorias DESC, podios DESC
+        &quot;&quot;&quot;;
+
+<span class="fc" id="L200">        List&lt;Map&lt;String, Object&gt;&gt; clasificacion = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L202">        try (Connection conn = JDBCUtil.getConnection();</span>
+<span class="fc" id="L203">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+
+<span class="fc" id="L205">            stmt.setInt(1, anio);</span>
+<span class="fc" id="L206">            stmt.setInt(2, anio);</span>
+<span class="fc" id="L207">            ResultSet rs = stmt.executeQuery();</span>
+
+<span class="fc" id="L209">            int posicion = 1;</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">            while (rs.next()) {</span>
+<span class="fc" id="L211">                Map&lt;String, Object&gt; constructorData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L212">                constructorData.put(&quot;posicion&quot;, posicion++);</span>
+<span class="fc" id="L213">                constructorData.put(&quot;id&quot;, rs.getLong(&quot;id&quot;));</span>
+<span class="fc" id="L214">                constructorData.put(&quot;nombre&quot;, rs.getString(&quot;nombre&quot;));</span>
+<span class="fc" id="L215">                constructorData.put(&quot;nacionalidad&quot;, rs.getString(&quot;nacionalidad&quot;));</span>
+<span class="fc" id="L216">                constructorData.put(&quot;puntos&quot;, rs.getBigDecimal(&quot;total_puntos&quot;));</span>
+<span class="fc" id="L217">                constructorData.put(&quot;victorias&quot;, rs.getInt(&quot;victorias&quot;));</span>
+<span class="fc" id="L218">                constructorData.put(&quot;podios&quot;, rs.getInt(&quot;podios&quot;));</span>
+<span class="fc" id="L219">                clasificacion.add(constructorData);</span>
+<span class="fc" id="L220">            }</span>
+
+<span class="fc" id="L222">            logger.info(&quot;Clasificación de constructores obtenida: {} constructores&quot;, clasificacion.size());</span>
+<span class="fc" id="L223">            return clasificacion;</span>
+
+<span class="fc" id="L225">        } catch (Exception e) {</span>
+<span class="fc" id="L226">            logger.error(&quot;Error al obtener clasificación de constructores&quot;, e);</span>
+<span class="fc" id="L227">            throw new RuntimeException(&quot;Error al obtener clasificación de constructores&quot;, e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

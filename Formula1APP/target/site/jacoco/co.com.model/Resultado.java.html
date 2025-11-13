@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Resultado.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.model</a> &gt; <span class="el_source">Resultado.java</span></div><h1>Resultado.java</h1><pre class="source lang-java linenums">package co.com.model;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = &quot;resultado&quot;)
+public class Resultado {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;carrera_id&quot;)
+    private Carrera carrera;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;piloto_id&quot;)
+    private Piloto piloto;
+
+    @Column(name = &quot;posicion_final&quot;)
+    private Integer posicionFinal;
+
+    @Column(name = &quot;puntos_obtenidos&quot;, precision = 5, scale = 2)
+    private BigDecimal puntosObtenidos;
+
+    @Column(name = &quot;vueltas&quot;)
+    private Integer vueltas;
+
+    @Column(name = &quot;tiempo&quot;, length = 100)
+    private String tiempo;
+
+<span class="pc" id="L34">    @Column(name = &quot;retirado&quot;)</span>
+<span class="pc" id="L35">    private Boolean retirado = false;</span>
+
+    @Column(name = &quot;motivo_retiro&quot;, length = 200)
+    private String motivoRetiro;
+
+    // Constructores
+<span class="fc" id="L41">    public Resultado() {</span>
+<span class="fc" id="L42">    }</span>
+
+<span class="nc" id="L44">    public Resultado(Integer posicionFinal, BigDecimal puntosObtenidos) {</span>
+<span class="nc" id="L45">        this.posicionFinal = posicionFinal;</span>
+<span class="nc" id="L46">        this.puntosObtenidos = puntosObtenidos;</span>
+<span class="nc" id="L47">        this.retirado = false;</span>
+<span class="nc" id="L48">    }</span>
+
+    // Getters y Setters
+    public Long getId() {
+<span class="fc" id="L52">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="nc" id="L56">        this.id = id;</span>
+<span class="nc" id="L57">    }</span>
+
+    public Carrera getCarrera() {
+<span class="fc" id="L60">        return carrera;</span>
+    }
+
+    public void setCarrera(Carrera carrera) {
+<span class="fc" id="L64">        this.carrera = carrera;</span>
+<span class="fc" id="L65">    }</span>
+
+    public Piloto getPiloto() {
+<span class="fc" id="L68">        return piloto;</span>
+    }
+
+    public void setPiloto(Piloto piloto) {
+<span class="fc" id="L72">        this.piloto = piloto;</span>
+<span class="fc" id="L73">    }</span>
+
+    public Integer getPosicionFinal() {
+<span class="fc" id="L76">        return posicionFinal;</span>
+    }
+
+    public void setPosicionFinal(Integer posicionFinal) {
+<span class="fc" id="L80">        this.posicionFinal = posicionFinal;</span>
+<span class="fc" id="L81">    }</span>
+
+    public BigDecimal getPuntosObtenidos() {
+<span class="fc" id="L84">        return puntosObtenidos;</span>
+    }
+
+    public void setPuntosObtenidos(BigDecimal puntosObtenidos) {
+<span class="fc" id="L88">        this.puntosObtenidos = puntosObtenidos;</span>
+<span class="fc" id="L89">    }</span>
+
+    public Integer getVueltas() {
+<span class="nc" id="L92">        return vueltas;</span>
+    }
+
+    public void setVueltas(Integer vueltas) {
+<span class="fc" id="L96">        this.vueltas = vueltas;</span>
+<span class="fc" id="L97">    }</span>
+
+    public String getTiempo() {
+<span class="nc" id="L100">        return tiempo;</span>
+    }
+
+    public void setTiempo(String tiempo) {
+<span class="fc" id="L104">        this.tiempo = tiempo;</span>
+<span class="fc" id="L105">    }</span>
+
+    public Boolean getRetirado() {
+<span class="nc" id="L108">        return retirado;</span>
+    }
+
+    public void setRetirado(Boolean retirado) {
+<span class="fc" id="L112">        this.retirado = retirado;</span>
+<span class="fc" id="L113">    }</span>
+
+    public String getMotivoRetiro() {
+<span class="nc" id="L116">        return motivoRetiro;</span>
+    }
+
+    public void setMotivoRetiro(String motivoRetiro) {
+<span class="nc" id="L120">        this.motivoRetiro = motivoRetiro;</span>
+<span class="nc" id="L121">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L125">        return &quot;Resultado{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, posicionFinal=&quot; + posicionFinal +
+                &quot;, puntosObtenidos=&quot; + puntosObtenidos +
+                &quot;, retirado=&quot; + retirado +
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

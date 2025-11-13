@@ -20,6 +20,10 @@ public class ResultadoDAO {
     private static final Logger logger = LoggerFactory.getLogger(ResultadoDAO.class);
 
     public List<Resultado> findByCarrera(Long carreraId) {
+        if (carreraId == null) {
+            throw new RuntimeException("El ID de la carrera no puede ser nulo");
+        }
+
         EntityManager em = JPAUtil.getEntityManager();
         try {
             TypedQuery<Resultado> query = em.createQuery(
@@ -40,18 +44,27 @@ public class ResultadoDAO {
         }
     }
 
-    public void save(Resultado resultado) {
+    public Resultado save(Resultado resultado) {
+        if (resultado == null) {
+            throw new RuntimeException("El resultado no puede ser nulo");
+        }
+        if (resultado.getCarrera() == null) {
+            throw new RuntimeException("El resultado debe tener una carrera asociada");
+        }
+        if (resultado.getPiloto() == null) {
+            throw new RuntimeException("El resultado debe tener un piloto asociado");
+        }
+
         EntityManager em = JPAUtil.getEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(resultado);
             em.getTransaction().commit();
-            logger.info("Resultado guardado");
+            return resultado;
         } catch (Exception e) {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-            logger.error("Error al guardar resultado", e);
             throw new RuntimeException("Error al guardar resultado", e);
         } finally {
             JPAUtil.close(em);
@@ -212,6 +225,22 @@ public class ResultadoDAO {
         } catch (Exception e) {
             logger.error("Error al obtener clasificación de constructores", e);
             throw new RuntimeException("Error al obtener clasificación de constructores", e);
+        }
+    }
+    public long countByCarrera(Long carreraId) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(r) FROM Resultado r WHERE r.carrera.id = :carreraId",
+                    Long.class
+            );
+            query.setParameter("carreraId", carreraId);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            logger.error("Error al contar resultados de la carrera ID: {}", carreraId, e);
+            return 0;
+        } finally {
+            JPAUtil.close(em);
         }
     }
 }

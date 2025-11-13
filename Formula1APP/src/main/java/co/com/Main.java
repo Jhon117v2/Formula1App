@@ -15,6 +15,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.logging.*;
+
+//simulación en java de formula1
+import co.com.simulacion.service.SimulacionService;
 
 /**
  * Clase principal con menú de consola para consultar datos de temporadas de Formula 1.
@@ -23,6 +27,7 @@ public class Main {
     private static final F1Servicio servicio = new F1Servicio();
     private static final ResultadoService resultadoService = new ResultadoService();
     private static final TemporadaService temporadaService = new TemporadaService();
+    private static final SimulacionService simulacionService = new SimulacionService();
     private static final Scanner scanner = new Scanner(System.in);
     private static final String SEPARADOR_GRUESO = "=".repeat(100);
     private static final String SEPARADOR_FINO = "-".repeat(100);
@@ -30,6 +35,14 @@ public class Main {
     private static int temporadaActual = 2024;
 
     public static void main(String[] args) {
+
+        // 🔇 Desactivar logs de bajo nivel (HikariCP, JDBC, Hibernate)
+        Logger rootLogger = Logger.getLogger("");
+        rootLogger.setLevel(Level.SEVERE);
+        for (Handler h : rootLogger.getHandlers()) {
+            h.setLevel(Level.SEVERE);
+        }
+
         seleccionarTemporada();
 
         boolean salir = false;
@@ -51,7 +64,17 @@ public class Main {
                         imprimirMensaje("La gestión de resultados solo está disponible para la temporada 2025.", "ADVERTENCIA");
                     }
                 }
-                case 7 -> cambiarTemporada();
+                case 7 -> {
+                    if (temporadaActual == 2025) {
+                        ejecutarSimulacionCarreras();
+                    } else {
+                        imprimirMensaje("La simulación solo está disponible para la temporada 2025.", "ADVERTENCIA");
+                    }
+                }
+                case 8 -> {
+                    simulacionService.mostrarUltimosResultadosSimulados();
+                }
+                case 9 -> cambiarTemporada();
                 case 0 -> {
                     salir = true;
                     imprimirMensaje("Gracias por usar F1 Manager. Hasta pronto!", "INFO");
@@ -99,10 +122,12 @@ public class Main {
         if (temporadaActual == 2025) {
             System.out.println("\nGESTION (Solo temporada 2025)");
             System.out.println("  6. Gestión de resultados (Ingresar/Modificar/Eliminar)");
+            System.out.println("  7. Simular carreras posteriores a la fecha de congelación");
+            System.out.println("  8. Ver resultados de las últimas simulaciones");
         }
 
         System.out.println("\nOPCIONES");
-        System.out.println("  7. Cambiar de temporada");
+        System.out.println("  9. Cambiar de temporada");
         System.out.println("  0. Salir");
         System.out.println(SEPARADOR_FINO);
         System.out.print("Seleccione una opción: ");
@@ -354,10 +379,7 @@ public class Main {
         }
 
         System.out.println("\nCarreras disponibles:");
-        for (int i = 0; i < carrerasEditables.size(); i++) {
-            Carrera c = carrerasEditables.get(i);
-            System.out.printf("%d. %s - %s (ID: %d)%n", i + 1, c.getNombreGp(), c.getFecha(), c.getId());
-        }
+        for (int i = 0; i < carrerasEditables.size(); i++)
 
         System.out.print("\nSeleccione el número de carrera (0 para cancelar): ");
         int seleccion = leerOpcion();
@@ -517,6 +539,35 @@ public class Main {
             imprimirMensaje(e.getMessage(), "ERROR");
         } catch (Exception e) {
             imprimirMensaje("Error al eliminar resultados: " + e.getMessage(), "ERROR");
+        }
+    }
+
+    private static void ejecutarSimulacionCarreras() {
+        imprimirEncabezado("SIMULACIÓN AUTOMÁTICA DE CARRERAS - TEMPORADA 2025");
+
+        System.out.println("Este proceso generará los resultados simulados de las dos");
+        System.out.println("carreras posteriores a la fecha de congelación:");
+        System.out.println(ConfiguracionTemporada.getMensajeCongelacion());
+        System.out.println(SEPARADOR_FINO);
+        System.out.print("¿Desea continuar? (S/N): ");
+
+        String confirmar = leerTexto().trim().toUpperCase();
+        if (!confirmar.equals("S")) {
+            System.out.println("Operación cancelada.");
+            return;
+        }
+
+        try {
+            int simuladas = simulacionService.simularCarrerasPosteriores();
+            if (simuladas > 0) {
+                imprimirMensaje("Se simularon " + simuladas + " carreras exitosamente.", "EXITO");
+                System.out.println("Puede consultar los resultados desde la opción 4 del menú.");
+                System.out.println("Puede ver los detalles de las simulaciones con la opción 8 del menú.");
+            } else {
+                imprimirMensaje("No se generaron simulaciones (posiblemente no hay carreras posteriores).", "ADVERTENCIA");
+            }
+        } catch (Exception e) {
+            imprimirMensaje("Error durante la simulación: " + e.getMessage(), "ERROR");
         }
     }
 

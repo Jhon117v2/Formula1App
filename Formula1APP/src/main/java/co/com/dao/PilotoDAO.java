@@ -7,6 +7,7 @@ import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,6 +81,10 @@ public class PilotoDAO {
     public Optional<Piloto> findByNombre(String nombre) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            if (nombre == null || nombre.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo Optional vacío");
+                return Optional.empty();
+            }
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor " +
                             "WHERE LOWER(p.nombre) LIKE LOWER(:nombre)",
@@ -113,6 +118,10 @@ public class PilotoDAO {
     public List<Piloto> findByNacionalidad(String nacionalidad) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            if (nacionalidad == null || nacionalidad.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor " +
                             "WHERE LOWER(p.nacionalidad) = LOWER(:nacionalidad) ORDER BY p.nombre",
@@ -137,6 +146,10 @@ public class PilotoDAO {
     public List<Piloto> findByConstructor(Long constructorId) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            if (constructorId == null) {
+                logger.debug("ID de constructor nulo, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p WHERE p.constructor.id = :constructorId ORDER BY p.nombre",
                     Piloto.class
@@ -160,6 +173,10 @@ public class PilotoDAO {
     public Optional<Piloto> findByDorsal(String dorsal) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            if (dorsal == null || dorsal.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo Optional vacío");
+                return Optional.empty();
+            }
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor WHERE p.dorsal = :dorsal",
                     Piloto.class
@@ -208,16 +225,46 @@ public class PilotoDAO {
     public Piloto update(Piloto piloto) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            // Validación de parámetros
+            if (piloto == null) {
+                throw new RuntimeException("El piloto no puede ser nulo");
+            }
+            if (piloto.getId() == null) {
+                throw new RuntimeException("El piloto debe tener un ID válido para actualizar");
+            }
+
             em.getTransaction().begin();
-            Piloto updated = em.merge(piloto);
+
+            // Verificar que el piloto existe antes de actualizar
+            Piloto existingPiloto = em.find(Piloto.class, piloto.getId());
+            if (existingPiloto == null) {
+                em.getTransaction().rollback();
+                logger.warn("No se encontró piloto con ID: {}", piloto.getId());
+                throw new RuntimeException("No se puede actualizar un piloto que no existe (ID: " + piloto.getId() + ")");
+            }
+
+            // Actualizar los datos
+            existingPiloto.setNombre(piloto.getNombre());
+            if (piloto.getDorsal() != null) {
+                existingPiloto.setDorsal(piloto.getDorsal());
+            }
+            if (piloto.getNacionalidad() != null) {
+                existingPiloto.setNacionalidad(piloto.getNacionalidad());
+            }
+            if (piloto.getConstructor() != null) {
+                existingPiloto.setConstructor(piloto.getConstructor());
+            }
+
+            Piloto updated = em.merge(existingPiloto);
             em.getTransaction().commit();
+
             logger.info("Piloto actualizado exitosamente: {} (ID: {})", updated.getNombre(), updated.getId());
             return updated;
         } catch (Exception e) {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-            logger.error("Error al actualizar piloto: " + piloto.getNombre(), e);
+            logger.error("Error al actualizar piloto: " + (piloto != null ? piloto.getNombre() : "null"), e);
             throw new RuntimeException("Error al actualizar piloto", e);
         } finally {
             JPAUtil.close(em);

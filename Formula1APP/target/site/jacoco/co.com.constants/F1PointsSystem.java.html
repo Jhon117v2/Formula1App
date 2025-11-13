@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>F1PointsSystem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.constants</a> &gt; <span class="el_source">F1PointsSystem.java</span></div><h1>F1PointsSystem.java</h1><pre class="source lang-java linenums">package co.com.constants;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="nc" id="L7">public class F1PointsSystem {</span>
+
+    // Sistema de puntos para las primeras 10 posiciones
+<span class="fc" id="L10">    private static final Map&lt;Integer, BigDecimal&gt; POINTS_MAP = new HashMap&lt;&gt;();</span>
+
+    static {
+<span class="fc" id="L13">        POINTS_MAP.put(1, new BigDecimal(&quot;25&quot;));   // 1er lugar</span>
+<span class="fc" id="L14">        POINTS_MAP.put(2, new BigDecimal(&quot;18&quot;));   // 2do lugar</span>
+<span class="fc" id="L15">        POINTS_MAP.put(3, new BigDecimal(&quot;15&quot;));   // 3er lugar</span>
+<span class="fc" id="L16">        POINTS_MAP.put(4, new BigDecimal(&quot;12&quot;));   // 4to lugar</span>
+<span class="fc" id="L17">        POINTS_MAP.put(5, new BigDecimal(&quot;10&quot;));   // 5to lugar</span>
+<span class="fc" id="L18">        POINTS_MAP.put(6, new BigDecimal(&quot;8&quot;));    // 6to lugar</span>
+<span class="fc" id="L19">        POINTS_MAP.put(7, new BigDecimal(&quot;6&quot;));    // 7mo lugar</span>
+<span class="fc" id="L20">        POINTS_MAP.put(8, new BigDecimal(&quot;4&quot;));    // 8vo lugar</span>
+<span class="fc" id="L21">        POINTS_MAP.put(9, new BigDecimal(&quot;2&quot;));    // 9no lugar</span>
+<span class="fc" id="L22">        POINTS_MAP.put(10, new BigDecimal(&quot;1&quot;));   // 10mo lugar</span>
+    }
+
+    // Punto extra por vuelta rápida (si termina en top 10)
+<span class="fc" id="L26">    public static final BigDecimal FASTEST_LAP_POINTS = new BigDecimal(&quot;1&quot;);</span>
+
+    /**
+     * Obtiene los puntos correspondientes a una posición.
+     *
+     * @param position Posición final (1-10 dan puntos, resto 0)
+     * @return Puntos obtenidos
+     */
+    public static BigDecimal getPointsForPosition(int position) {
+<span class="fc" id="L35">        return POINTS_MAP.getOrDefault(position, BigDecimal.ZERO);</span>
+    }
+
+    /**
+     * Calcula los puntos totales incluyendo vuelta rápida si aplica.
+     *
+     * @param position Posición final
+     * @param hasFastestLap Si tiene la vuelta más rápida
+     * @return Puntos totales
+     */
+    public static BigDecimal calculatePoints(int position, boolean hasFastestLap) {
+<span class="fc" id="L46">        BigDecimal basePoints = getPointsForPosition(position);</span>
+
+        // Vuelta rápida solo suma si terminas en top 10
+<span class="fc bfc" id="L49" title="All 4 branches covered.">        if (hasFastestLap &amp;&amp; position &lt;= 10) {</span>
+<span class="fc" id="L50">            return basePoints.add(FASTEST_LAP_POINTS);</span>
+        }
+
+<span class="fc" id="L53">        return basePoints;</span>
+    }
+
+    /**
+     * Verifica si una posición otorga puntos.
+     *
+     * @param position Posición a verificar
+     * @return true si da puntos, false en caso contrario
+     */
+    public static boolean isPointScoringPosition(int position) {
+<span class="nc bnc" id="L63" title="All 4 branches missed.">        return position &gt;= 1 &amp;&amp; position &lt;= 10;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

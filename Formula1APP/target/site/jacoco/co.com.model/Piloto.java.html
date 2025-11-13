@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Piloto.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.model</a> &gt; <span class="el_source">Piloto.java</span></div><h1>Piloto.java</h1><pre class="source lang-java linenums">package co.com.model;
+
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = &quot;piloto&quot;)
+public class Piloto {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = &quot;nombre&quot;, nullable = false, length = 150)
+    private String nombre;
+
+    @Column(name = &quot;nacionalidad&quot;, length = 80)
+    private String nacionalidad;
+
+    @Column(name = &quot;dorsal&quot;, length = 10)
+    private String dorsal;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;constructor_id&quot;)
+    private Constructor constructor;
+
+<span class="fc" id="L28">    @OneToMany(mappedBy = &quot;piloto&quot;, cascade = CascadeType.ALL, orphanRemoval = true)</span>
+    private List&lt;Resultado&gt; resultados = new ArrayList&lt;&gt;();
+
+    // Constructores
+<span class="fc" id="L32">    public Piloto() {</span>
+<span class="fc" id="L33">    }</span>
+
+<span class="fc" id="L35">    public Piloto(String nombre, String nacionalidad, String dorsal) {</span>
+<span class="fc" id="L36">        this.nombre = nombre;</span>
+<span class="fc" id="L37">        this.nacionalidad = nacionalidad;</span>
+<span class="fc" id="L38">        this.dorsal = dorsal;</span>
+<span class="fc" id="L39">    }</span>
+
+    // Getters y Setters
+    public Long getId() {
+<span class="fc" id="L43">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="fc" id="L47">        this.id = id;</span>
+<span class="fc" id="L48">    }</span>
+
+    public String getNombre() {
+<span class="fc" id="L51">        return nombre;</span>
+    }
+
+    public void setNombre(String nombre) {
+<span class="fc" id="L55">        this.nombre = nombre;</span>
+<span class="fc" id="L56">    }</span>
+
+    public String getNacionalidad() {
+<span class="fc" id="L59">        return nacionalidad;</span>
+    }
+
+    public void setNacionalidad(String nacionalidad) {
+<span class="fc" id="L63">        this.nacionalidad = nacionalidad;</span>
+<span class="fc" id="L64">    }</span>
+
+    public String getDorsal() {
+<span class="fc" id="L67">        return dorsal;</span>
+    }
+
+    public void setDorsal(String dorsal) {
+<span class="fc" id="L71">        this.dorsal = dorsal;</span>
+<span class="fc" id="L72">    }</span>
+
+    public Constructor getConstructor() {
+<span class="fc" id="L75">        return constructor;</span>
+    }
+
+    public void setConstructor(Constructor constructor) {
+<span class="fc" id="L79">        this.constructor = constructor;</span>
+<span class="fc" id="L80">    }</span>
+
+    public List&lt;Resultado&gt; getResultados() {
+<span class="fc" id="L83">        return resultados;</span>
+    }
+
+    public void setResultados(List&lt;Resultado&gt; resultados) {
+<span class="fc" id="L87">        this.resultados = resultados;</span>
+<span class="fc" id="L88">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L92">        return &quot;Piloto{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, nombre='&quot; + nombre + '\'' +
+                &quot;, nacionalidad='&quot; + nacionalidad + '\'' +
+                &quot;, dorsal='&quot; + dorsal + '\'' +
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CircuitoDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.dao</a> &gt; <span class="el_source">CircuitoDAO.java</span></div><h1>CircuitoDAO.java</h1><pre class="source lang-java linenums">package co.com.dao;
+
+import co.com.model.Circuito;
+import co.com.util.JPAUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * DAO para gestionar operaciones CRUD de la entidad Circuito.
+ */
+<span class="fc" id="L17">public class CircuitoDAO {</span>
+<span class="fc" id="L18">    private static final Logger logger = LoggerFactory.getLogger(CircuitoDAO.class);</span>
+
+    /**
+     * Obtiene todos los circuitos ordenados por nombre.
+     *
+     * @return Lista de todos los circuitos
+     */
+    public List&lt;Circuito&gt; findAll() {
+<span class="fc" id="L26">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L28">            TypedQuery&lt;Circuito&gt; query = em.createQuery(</span>
+                    &quot;SELECT c FROM Circuito c ORDER BY c.nombre&quot;,
+                    Circuito.class
+            );
+<span class="fc" id="L32">            List&lt;Circuito&gt; circuitos = query.getResultList();</span>
+<span class="fc" id="L33">            logger.info(&quot;Se obtuvieron {} circuitos&quot;, circuitos.size());</span>
+<span class="fc" id="L34">            return circuitos;</span>
+<span class="nc" id="L35">        } catch (Exception e) {</span>
+<span class="nc" id="L36">            logger.error(&quot;Error al listar circuitos&quot;, e);</span>
+<span class="nc" id="L37">            throw new RuntimeException(&quot;Error al obtener circuitos&quot;, e);</span>
+        } finally {
+<span class="fc" id="L39">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Obtiene los circuitos de una temporada específica ordenados por GP.
+     *
+     * @param anio Año de la temporada
+     * @return Lista de circuitos de esa temporada
+     */
+    public List&lt;Circuito&gt; findByTemporada(Integer anio) {
+<span class="fc" id="L50">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L52">            TypedQuery&lt;Circuito&gt; query = em.createQuery(</span>
+                    &quot;SELECT DISTINCT ci FROM Circuito ci &quot; +
+                            &quot;JOIN ci.carreras ca &quot; +
+                            &quot;JOIN ca.temporada t &quot; +
+                            &quot;WHERE t.anio = :anio &quot; +
+                            &quot;ORDER BY ca.gpNumero&quot;,
+                    Circuito.class
+            );
+<span class="fc" id="L60">            query.setParameter(&quot;anio&quot;, anio);</span>
+<span class="fc" id="L61">            List&lt;Circuito&gt; circuitos = query.getResultList();</span>
+<span class="fc" id="L62">            logger.info(&quot;Se obtuvieron {} circuitos para la temporada {}&quot;, circuitos.size(), anio);</span>
+<span class="fc" id="L63">            return circuitos;</span>
+<span class="nc" id="L64">        } catch (Exception e) {</span>
+<span class="nc" id="L65">            logger.error(&quot;Error al listar circuitos por temporada: &quot; + anio, e);</span>
+<span class="nc" id="L66">            throw new RuntimeException(&quot;Error al obtener circuitos de la temporada&quot;, e);</span>
+        } finally {
+<span class="fc" id="L68">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca un circuito por su ID.
+     *
+     * @param id ID del circuito
+     * @return Optional con el circuito si existe
+     */
+    public Optional&lt;Circuito&gt; findById(Long id) {
+<span class="fc" id="L79">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L81">            Circuito circuito = em.find(Circuito.class, id);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (circuito != null) {</span>
+<span class="fc" id="L83">                logger.debug(&quot;Circuito encontrado con ID {}: {}&quot;, id, circuito.getNombre());</span>
+            } else {
+<span class="fc" id="L85">                logger.debug(&quot;No se encontró circuito con ID: {}&quot;, id);</span>
+            }
+<span class="fc" id="L87">            return Optional.ofNullable(circuito);</span>
+<span class="nc" id="L88">        } catch (Exception e) {</span>
+<span class="nc" id="L89">            logger.error(&quot;Error al buscar circuito por ID: &quot; + id, e);</span>
+<span class="nc" id="L90">            return Optional.empty();</span>
+        } finally {
+<span class="fc" id="L92">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca circuitos por nombre (búsqueda parcial, case-insensitive).
+     *
+     * @param nombre Nombre o parte del nombre del circuito
+     * @return Lista de circuitos que coinciden
+     */
+    public List&lt;Circuito&gt; findByNombre(String nombre) {
+<span class="fc" id="L103">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+            // Validar entrada nula o vacía
+<span class="fc bfc" id="L106" title="All 4 branches covered.">            if (nombre == null || nombre.trim().isEmpty()) {</span>
+<span class="fc" id="L107">                logger.debug(&quot;Entrada nula o vacía, devolviendo lista vacía&quot;);</span>
+<span class="fc" id="L108">                return Collections.emptyList();</span>
+            }
+
+<span class="fc" id="L111">            TypedQuery&lt;Circuito&gt; query = em.createQuery(</span>
+                    &quot;SELECT c FROM Circuito c WHERE LOWER(c.nombre) LIKE LOWER(:nombre) ORDER BY c.nombre&quot;,
+                    Circuito.class
+            );
+<span class="fc" id="L115">            query.setParameter(&quot;nombre&quot;, &quot;%&quot; + nombre + &quot;%&quot;);</span>
+<span class="fc" id="L116">            return query.getResultList();</span>
+<span class="nc" id="L117">        } catch (Exception e) {</span>
+<span class="nc" id="L118">            logger.error(&quot;Error al buscar circuitos por nombre: &quot; + nombre, e);</span>
+<span class="nc" id="L119">            throw new RuntimeException(&quot;Error al buscar circuitos por nombre&quot;, e);</span>
+        } finally {
+<span class="fc" id="L121">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca circuitos por ubicación.
+     *
+     * @param ubicacion Ubicación del circuito
+     * @return Lista de circuitos en esa ubicación
+     */
+    public List&lt;Circuito&gt; findByUbicacion(String ubicacion) {
+<span class="fc" id="L132">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+            // Validar entrada nula o vacía
+<span class="fc bfc" id="L135" title="All 4 branches covered.">            if (ubicacion == null || ubicacion.trim().isEmpty()) {</span>
+<span class="fc" id="L136">                logger.debug(&quot;Entrada nula o vacía, devolviendo lista vacía&quot;);</span>
+<span class="fc" id="L137">                return Collections.emptyList();</span>
+            }
+
+<span class="fc" id="L140">            TypedQuery&lt;Circuito&gt; query = em.createQuery(</span>
+                    &quot;SELECT c FROM Circuito c WHERE LOWER(c.ubicacion) LIKE LOWER(:ubicacion) ORDER BY c.nombre&quot;,
+                    Circuito.class
+            );
+<span class="fc" id="L144">            query.setParameter(&quot;ubicacion&quot;, &quot;%&quot; + ubicacion + &quot;%&quot;);</span>
+<span class="fc" id="L145">            return query.getResultList();</span>
+<span class="nc" id="L146">        } catch (Exception e) {</span>
+<span class="nc" id="L147">            logger.error(&quot;Error al buscar circuitos por ubicación: &quot; + ubicacion, e);</span>
+<span class="nc" id="L148">            throw new RuntimeException(&quot;Error al buscar circuitos por ubicación&quot;, e);</span>
+        } finally {
+<span class="fc" id="L150">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Guarda un nuevo circuito en la base de datos.
+     *
+     * @param circuito Circuito a guardar
+     * @return Circuito guardado con ID asignado
+     */
+    public Circuito save(Circuito circuito) {
+<span class="fc" id="L161">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L163">            em.getTransaction().begin();</span>
+<span class="fc" id="L164">            em.persist(circuito);</span>
+<span class="fc" id="L165">            em.getTransaction().commit();</span>
+<span class="fc" id="L166">            logger.info(&quot;Circuito guardado exitosamente: {} (ID: {})&quot;,</span>
+<span class="fc" id="L167">                    circuito.getNombre(), circuito.getId());</span>
+<span class="fc" id="L168">            return circuito;</span>
+<span class="fc" id="L169">        } catch (Exception e) {</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="fc" id="L171">                em.getTransaction().rollback();</span>
+            }
+<span class="fc" id="L173">            logger.error(&quot;Error al guardar circuito: &quot; + circuito.getNombre(), e);</span>
+<span class="fc" id="L174">            throw new RuntimeException(&quot;Error al guardar circuito&quot;, e);</span>
+        } finally {
+<span class="fc" id="L176">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Actualiza un circuito existente.
+     *
+     * @param circuito Circuito con datos actualizados
+     * @return Circuito actualizado
+     */
+    public Circuito update(Circuito circuito) {
+<span class="fc" id="L187">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+            // Validación de parámetros
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">            if (circuito == null) {</span>
+<span class="nc" id="L191">                throw new RuntimeException(&quot;El circuito no puede ser nulo&quot;);</span>
+            }
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">            if (circuito.getId() == null) {</span>
+<span class="nc" id="L194">                throw new RuntimeException(&quot;El circuito debe tener un ID válido para actualizar&quot;);</span>
+            }
+
+<span class="fc" id="L197">            em.getTransaction().begin();</span>
+
+            // Verificar que el circuito existe antes de actualizar
+<span class="fc" id="L200">            Circuito existingCircuito = em.find(Circuito.class, circuito.getId());</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">            if (existingCircuito == null) {</span>
+<span class="nc" id="L202">                em.getTransaction().rollback();</span>
+<span class="nc" id="L203">                logger.warn(&quot;No se encontró circuito con ID: {}&quot;, circuito.getId());</span>
+<span class="nc" id="L204">                throw new RuntimeException(&quot;No se puede actualizar un circuito que no existe (ID: &quot; + circuito.getId() + &quot;)&quot;);</span>
+            }
+
+            // Actualizar los datos
+<span class="fc" id="L208">            existingCircuito.setNombre(circuito.getNombre());</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">            if (circuito.getUbicacion() != null) {</span>
+<span class="fc" id="L210">                existingCircuito.setUbicacion(circuito.getUbicacion());</span>
+            }
+
+<span class="fc" id="L213">            Circuito updated = em.merge(existingCircuito);</span>
+<span class="fc" id="L214">            em.getTransaction().commit();</span>
+
+<span class="fc" id="L216">            logger.info(&quot;Circuito actualizado exitosamente: {} (ID: {})&quot;,</span>
+<span class="fc" id="L217">                    updated.getNombre(), updated.getId());</span>
+<span class="fc" id="L218">            return updated;</span>
+<span class="nc" id="L219">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L221">                em.getTransaction().rollback();</span>
+            }
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            logger.error(&quot;Error al actualizar circuito: &quot; + (circuito != null ? circuito.getNombre() : &quot;null&quot;), e);</span>
+<span class="nc" id="L224">            throw new RuntimeException(&quot;Error al actualizar circuito&quot;, e);</span>
+        } finally {
+<span class="fc" id="L226">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Elimina un circuito por su ID.
+     *
+     * @param id ID del circuito a eliminar
+     * @return true si se eliminó, false si no existía
+     */
+    public boolean delete(Long id) {
+<span class="fc" id="L237">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L239">            em.getTransaction().begin();</span>
+<span class="fc" id="L240">            Circuito circuito = em.find(Circuito.class, id);</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            if (circuito != null) {</span>
+<span class="fc" id="L242">                em.remove(circuito);</span>
+<span class="fc" id="L243">                em.getTransaction().commit();</span>
+<span class="fc" id="L244">                logger.info(&quot;Circuito eliminado: {} (ID: {})&quot;, circuito.getNombre(), id);</span>
+<span class="fc" id="L245">                return true;</span>
+            } else {
+<span class="fc" id="L247">                em.getTransaction().rollback();</span>
+<span class="fc" id="L248">                logger.warn(&quot;No se encontró circuito con ID: {}&quot;, id);</span>
+<span class="fc" id="L249">                return false;</span>
+            }
+<span class="nc" id="L251">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L253">                em.getTransaction().rollback();</span>
+            }
+<span class="nc" id="L255">            logger.error(&quot;Error al eliminar circuito con ID: &quot; + id, e);</span>
+<span class="nc" id="L256">            throw new RuntimeException(&quot;Error al eliminar circuito&quot;, e);</span>
+        } finally {
+<span class="fc" id="L258">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Cuenta el total de circuitos en la base de datos.
+     *
+     * @return Número total de circuitos
+     */
+    public long count() {
+<span class="fc" id="L268">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L270">            TypedQuery&lt;Long&gt; query = em.createQuery(</span>
+                    &quot;SELECT COUNT(c) FROM Circuito c&quot;,
+                    Long.class
+            );
+<span class="fc" id="L274">            return query.getSingleResult();</span>
+<span class="nc" id="L275">        } catch (Exception e) {</span>
+<span class="nc" id="L276">            logger.error(&quot;Error al contar circuitos&quot;, e);</span>
+<span class="nc" id="L277">            return 0;</span>
+        } finally {
+<span class="fc" id="L279">            JPAUtil.close(em);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

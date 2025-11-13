@@ -7,6 +7,7 @@ import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -101,6 +102,12 @@ public class CircuitoDAO {
     public List<Circuito> findByNombre(String nombre) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            // Validar entrada nula o vacía
+            if (nombre == null || nombre.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
+
             TypedQuery<Circuito> query = em.createQuery(
                     "SELECT c FROM Circuito c WHERE LOWER(c.nombre) LIKE LOWER(:nombre) ORDER BY c.nombre",
                     Circuito.class
@@ -124,6 +131,12 @@ public class CircuitoDAO {
     public List<Circuito> findByUbicacion(String ubicacion) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            // Validar entrada nula o vacía
+            if (ubicacion == null || ubicacion.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
+
             TypedQuery<Circuito> query = em.createQuery(
                     "SELECT c FROM Circuito c WHERE LOWER(c.ubicacion) LIKE LOWER(:ubicacion) ORDER BY c.nombre",
                     Circuito.class
@@ -173,9 +186,33 @@ public class CircuitoDAO {
     public Circuito update(Circuito circuito) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
+            // Validación de parámetros
+            if (circuito == null) {
+                throw new RuntimeException("El circuito no puede ser nulo");
+            }
+            if (circuito.getId() == null) {
+                throw new RuntimeException("El circuito debe tener un ID válido para actualizar");
+            }
+
             em.getTransaction().begin();
-            Circuito updated = em.merge(circuito);
+
+            // Verificar que el circuito existe antes de actualizar
+            Circuito existingCircuito = em.find(Circuito.class, circuito.getId());
+            if (existingCircuito == null) {
+                em.getTransaction().rollback();
+                logger.warn("No se encontró circuito con ID: {}", circuito.getId());
+                throw new RuntimeException("No se puede actualizar un circuito que no existe (ID: " + circuito.getId() + ")");
+            }
+
+            // Actualizar los datos
+            existingCircuito.setNombre(circuito.getNombre());
+            if (circuito.getUbicacion() != null) {
+                existingCircuito.setUbicacion(circuito.getUbicacion());
+            }
+
+            Circuito updated = em.merge(existingCircuito);
             em.getTransaction().commit();
+
             logger.info("Circuito actualizado exitosamente: {} (ID: {})",
                     updated.getNombre(), updated.getId());
             return updated;
@@ -183,7 +220,7 @@ public class CircuitoDAO {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-            logger.error("Error al actualizar circuito: " + circuito.getNombre(), e);
+            logger.error("Error al actualizar circuito: " + (circuito != null ? circuito.getNombre() : "null"), e);
             throw new RuntimeException("Error al actualizar circuito", e);
         } finally {
             JPAUtil.close(em);
