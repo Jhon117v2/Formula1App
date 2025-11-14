@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TemporadaDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.dao</a> &gt; <span class="el_source">TemporadaDAO.java</span></div><h1>TemporadaDAO.java</h1><pre class="source lang-java linenums">package co.com.dao;
+
+import co.com.model.Temporada;
+import co.com.util.JPAUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Optional;
+
+<span class="fc" id="L13">public class TemporadaDAO {</span>
+<span class="fc" id="L14">    private static final Logger logger = LoggerFactory.getLogger(TemporadaDAO.class);</span>
+
+    /**
+     * Obtiene todas las temporadas ordenadas por año descendente.
+     *
+     * @return Lista de todas las temporadas
+     */
+    public List&lt;Temporada&gt; findAll() {
+<span class="fc" id="L22">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L24">            TypedQuery&lt;Temporada&gt; query = em.createQuery(</span>
+                    &quot;SELECT t FROM Temporada t ORDER BY t.anio DESC&quot;,
+                    Temporada.class
+            );
+<span class="fc" id="L28">            List&lt;Temporada&gt; temporadas = query.getResultList();</span>
+<span class="fc" id="L29">            logger.info(&quot;Se obtuvieron {} temporadas&quot;, temporadas.size());</span>
+<span class="fc" id="L30">            return temporadas;</span>
+<span class="nc" id="L31">        } catch (Exception e) {</span>
+<span class="nc" id="L32">            logger.error(&quot;Error al listar temporadas&quot;, e);</span>
+<span class="nc" id="L33">            throw new RuntimeException(&quot;Error al obtener temporadas&quot;, e);</span>
+        } finally {
+<span class="fc" id="L35">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca una temporada por su ID.
+     *
+     * @param id ID de la temporada
+     * @return Optional con la temporada si existe
+     */
+    public Optional&lt;Temporada&gt; findById(Long id) {
+<span class="fc" id="L46">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L48">            Temporada temporada = em.find(Temporada.class, id);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            if (temporada != null) {</span>
+<span class="fc" id="L50">                logger.debug(&quot;Temporada encontrada con ID {}: {}&quot;, id, temporada.getAnio());</span>
+            } else {
+<span class="fc" id="L52">                logger.debug(&quot;No se encontró temporada con ID: {}&quot;, id);</span>
+            }
+<span class="fc" id="L54">            return Optional.ofNullable(temporada);</span>
+<span class="nc" id="L55">        } catch (Exception e) {</span>
+<span class="nc" id="L56">            logger.error(&quot;Error al buscar temporada por ID: &quot; + id, e);</span>
+<span class="nc" id="L57">            return Optional.empty();</span>
+        } finally {
+<span class="fc" id="L59">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca una temporada por año.
+     * Este método es crucial para el sistema de temporadas 2024/2025.
+     *
+     * @param anio Año de la temporada
+     * @return Optional con la temporada si existe
+     */
+    public Optional&lt;Temporada&gt; findByAnio(Integer anio) {
+<span class="fc" id="L71">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L73">            TypedQuery&lt;Temporada&gt; query = em.createQuery(</span>
+                    &quot;SELECT t FROM Temporada t WHERE t.anio = :anio&quot;,
+                    Temporada.class
+            );
+<span class="fc" id="L77">            query.setParameter(&quot;anio&quot;, anio);</span>
+<span class="fc" id="L78">            Optional&lt;Temporada&gt; result = query.getResultStream().findFirst();</span>
+
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            if (result.isPresent()) {</span>
+<span class="fc" id="L81">                logger.debug(&quot;Temporada encontrada: {}&quot;, anio);</span>
+            } else {
+<span class="fc" id="L83">                logger.debug(&quot;No se encontró temporada para el año: {}&quot;, anio);</span>
+            }
+
+<span class="fc" id="L86">            return result;</span>
+<span class="nc" id="L87">        } catch (Exception e) {</span>
+<span class="nc" id="L88">            logger.error(&quot;Error al buscar temporada por año: &quot; + anio, e);</span>
+<span class="nc" id="L89">            return Optional.empty();</span>
+        } finally {
+<span class="fc" id="L91">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Obtiene las temporadas en un rango de años.
+     *
+     * @param anioInicio Año de inicio (inclusive)
+     * @param anioFin Año de fin (inclusive)
+     * @return Lista de temporadas en el rango
+     */
+    public List&lt;Temporada&gt; findByRangoAnios(Integer anioInicio, Integer anioFin) {
+<span class="fc" id="L103">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L105">            TypedQuery&lt;Temporada&gt; query = em.createQuery(</span>
+                    &quot;SELECT t FROM Temporada t WHERE t.anio BETWEEN :inicio AND :fin ORDER BY t.anio DESC&quot;,
+                    Temporada.class
+            );
+<span class="fc" id="L109">            query.setParameter(&quot;inicio&quot;, anioInicio);</span>
+<span class="fc" id="L110">            query.setParameter(&quot;fin&quot;, anioFin);</span>
+<span class="fc" id="L111">            List&lt;Temporada&gt; temporadas = query.getResultList();</span>
+<span class="fc" id="L112">            logger.debug(&quot;Se encontraron {} temporadas entre {} y {}&quot;,</span>
+<span class="fc" id="L113">                    temporadas.size(), anioInicio, anioFin);</span>
+<span class="fc" id="L114">            return temporadas;</span>
+<span class="nc" id="L115">        } catch (Exception e) {</span>
+<span class="nc" id="L116">            logger.error(&quot;Error al buscar temporadas por rango&quot;, e);</span>
+<span class="nc" id="L117">            throw new RuntimeException(&quot;Error al buscar temporadas por rango&quot;, e);</span>
+        } finally {
+<span class="fc" id="L119">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Obtiene la temporada más reciente.
+     *
+     * @return Optional con la temporada más reciente
+     */
+    public Optional&lt;Temporada&gt; findMasReciente() {
+<span class="fc" id="L129">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L131">            TypedQuery&lt;Temporada&gt; query = em.createQuery(</span>
+                    &quot;SELECT t FROM Temporada t ORDER BY t.anio DESC&quot;,
+                    Temporada.class
+            );
+<span class="fc" id="L135">            query.setMaxResults(1);</span>
+<span class="fc" id="L136">            Optional&lt;Temporada&gt; result = query.getResultStream().findFirst();</span>
+
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">            if (result.isPresent()) {</span>
+<span class="fc" id="L139">                logger.debug(&quot;Temporada más reciente: {}&quot;, result.get().getAnio());</span>
+            }
+
+<span class="fc" id="L142">            return result;</span>
+<span class="nc" id="L143">        } catch (Exception e) {</span>
+<span class="nc" id="L144">            logger.error(&quot;Error al buscar temporada más reciente&quot;, e);</span>
+<span class="nc" id="L145">            return Optional.empty();</span>
+        } finally {
+<span class="fc" id="L147">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Verifica si existe una temporada para un año específico.
+     *
+     * @param anio Año a verificar
+     * @return true si existe, false en caso contrario
+     */
+    public boolean existeTemporada(Integer anio) {
+<span class="fc" id="L158">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L160">            TypedQuery&lt;Long&gt; query = em.createQuery(</span>
+                    &quot;SELECT COUNT(t) FROM Temporada t WHERE t.anio = :anio&quot;,
+                    Long.class
+            );
+<span class="fc" id="L164">            query.setParameter(&quot;anio&quot;, anio);</span>
+<span class="fc" id="L165">            Long count = query.getSingleResult();</span>
+
+<span class="fc bfc" id="L167" title="All 2 branches covered.">            boolean existe = count &gt; 0;</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            logger.debug(&quot;Temporada {} {}&quot;, anio, existe ? &quot;existe&quot; : &quot;no existe&quot;);</span>
+
+<span class="fc" id="L170">            return existe;</span>
+<span class="nc" id="L171">        } catch (Exception e) {</span>
+<span class="nc" id="L172">            logger.error(&quot;Error al verificar existencia de temporada: &quot; + anio, e);</span>
+<span class="nc" id="L173">            return false;</span>
+        } finally {
+<span class="fc" id="L175">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Guarda una nueva temporada en la base de datos.
+     *
+     * @param temporada Temporada a guardar
+     * @return Temporada guardada con ID asignado
+     */
+    public Temporada save(Temporada temporada) {
+<span class="fc" id="L186">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L188">            em.getTransaction().begin();</span>
+
+            // Validar que no exista ya una temporada con ese año
+<span class="fc bfc" id="L191" title="All 2 branches covered.">            if (existeTemporada(temporada.getAnio())) {</span>
+<span class="fc" id="L192">                throw new IllegalArgumentException(</span>
+<span class="fc" id="L193">                        &quot;Ya existe una temporada para el año &quot; + temporada.getAnio()</span>
+                );
+            }
+
+<span class="fc" id="L197">            em.persist(temporada);</span>
+<span class="fc" id="L198">            em.getTransaction().commit();</span>
+<span class="fc" id="L199">            logger.info(&quot;Temporada guardada exitosamente: {} (ID: {})&quot;,</span>
+<span class="fc" id="L200">                    temporada.getAnio(), temporada.getId());</span>
+<span class="fc" id="L201">            return temporada;</span>
+<span class="fc" id="L202">        } catch (IllegalArgumentException e) {</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="fc" id="L204">                em.getTransaction().rollback();</span>
+            }
+<span class="fc" id="L206">            logger.warn(&quot;No se puede guardar temporada duplicada: {}&quot;, temporada.getAnio());</span>
+<span class="fc" id="L207">            throw e;</span>
+<span class="nc" id="L208">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L210">                em.getTransaction().rollback();</span>
+            }
+<span class="nc" id="L212">            logger.error(&quot;Error al guardar temporada: &quot; + temporada.getAnio(), e);</span>
+<span class="nc" id="L213">            throw new RuntimeException(&quot;Error al guardar temporada&quot;, e);</span>
+        } finally {
+<span class="fc" id="L215">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Guarda una temporada sin validar duplicados (para uso interno).
+     * Útil cuando se copia de otra temporada.
+     *
+     * @param temporada Temporada a guardar
+     * @param em EntityManager existente (debe estar en transacción)
+     * @return Temporada guardada
+     */
+    public Temporada saveWithoutValidation(Temporada temporada, EntityManager em) {
+        try {
+<span class="fc" id="L229">            em.persist(temporada);</span>
+<span class="fc" id="L230">            logger.debug(&quot;Temporada persistida: {}&quot;, temporada.getAnio());</span>
+<span class="fc" id="L231">            return temporada;</span>
+<span class="nc" id="L232">        } catch (Exception e) {</span>
+<span class="nc" id="L233">            logger.error(&quot;Error al persistir temporada&quot;, e);</span>
+<span class="nc" id="L234">            throw new RuntimeException(&quot;Error al persistir temporada&quot;, e);</span>
+        }
+    }
+
+    /**
+     * Actualiza una temporada existente.
+     *
+     * @param temporada Temporada con datos actualizados
+     * @return Temporada actualizada
+     */
+    public Temporada update(Temporada temporada) {
+<span class="fc" id="L245">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L247">            em.getTransaction().begin();</span>
+<span class="fc" id="L248">            Temporada updated = em.merge(temporada);</span>
+<span class="fc" id="L249">            em.getTransaction().commit();</span>
+<span class="fc" id="L250">            logger.info(&quot;Temporada actualizada exitosamente: {} (ID: {})&quot;,</span>
+<span class="fc" id="L251">                    updated.getAnio(), updated.getId());</span>
+<span class="fc" id="L252">            return updated;</span>
+<span class="nc" id="L253">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L255">                em.getTransaction().rollback();</span>
+            }
+<span class="nc" id="L257">            logger.error(&quot;Error al actualizar temporada: &quot; + temporada.getAnio(), e);</span>
+<span class="nc" id="L258">            throw new RuntimeException(&quot;Error al actualizar temporada&quot;, e);</span>
+        } finally {
+<span class="fc" id="L260">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Elimina una temporada por su ID.
+     * ADVERTENCIA: Esto también eliminará todas las carreras asociadas
+     * si se configuró CASCADE en la entidad.
+     *
+     * @param id ID de la temporada a eliminar
+     * @return true si se eliminó, false si no existía
+     */
+    public boolean delete(Long id) {
+<span class="fc" id="L273">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L275">            em.getTransaction().begin();</span>
+<span class="fc" id="L276">            Temporada temporada = em.find(Temporada.class, id);</span>
+<span class="fc bfc" id="L277" title="All 2 branches covered.">            if (temporada != null) {</span>
+                // Verificar si tiene carreras asociadas
+<span class="fc" id="L279">                TypedQuery&lt;Long&gt; query = em.createQuery(</span>
+                        &quot;SELECT COUNT(c) FROM Carrera c WHERE c.temporada.id = :tempId&quot;,
+                        Long.class
+                );
+<span class="fc" id="L283">                query.setParameter(&quot;tempId&quot;, id);</span>
+<span class="fc" id="L284">                Long carrerasCount = query.getSingleResult();</span>
+
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">                if (carrerasCount &gt; 0) {</span>
+<span class="nc" id="L287">                    logger.warn(&quot;La temporada {} tiene {} carreras asociadas&quot;,</span>
+<span class="nc" id="L288">                            temporada.getAnio(), carrerasCount);</span>
+                }
+
+<span class="fc" id="L291">                em.remove(temporada);</span>
+<span class="fc" id="L292">                em.getTransaction().commit();</span>
+<span class="fc" id="L293">                logger.info(&quot;Temporada eliminada: {} (ID: {})&quot;, temporada.getAnio(), id);</span>
+<span class="fc" id="L294">                return true;</span>
+            } else {
+<span class="fc" id="L296">                em.getTransaction().rollback();</span>
+<span class="fc" id="L297">                logger.warn(&quot;No se encontró temporada con ID: {}&quot;, id);</span>
+<span class="fc" id="L298">                return false;</span>
+            }
+<span class="nc" id="L300">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L302">                em.getTransaction().rollback();</span>
+            }
+<span class="nc" id="L304">            logger.error(&quot;Error al eliminar temporada con ID: &quot; + id, e);</span>
+<span class="nc" id="L305">            throw new RuntimeException(&quot;Error al eliminar temporada. Puede tener carreras asociadas.&quot;, e);</span>
+        } finally {
+<span class="fc" id="L307">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Elimina una temporada por año.
+     *
+     * @param anio Año de la temporada a eliminar
+     * @return true si se eliminó, false si no existía
+     */
+    public boolean deleteByAnio(Integer anio) {
+<span class="fc" id="L318">        Optional&lt;Temporada&gt; temporada = findByAnio(anio);</span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">        if (temporada.isPresent()) {</span>
+<span class="fc" id="L320">            return delete(temporada.get().getId());</span>
+        }
+<span class="fc" id="L322">        logger.warn(&quot;No se encontró temporada para el año: {}&quot;, anio);</span>
+<span class="fc" id="L323">        return false;</span>
+    }
+
+    /**
+     * Cuenta el total de temporadas en la base de datos.
+     *
+     * @return Número total de temporadas
+     */
+    public long count() {
+<span class="fc" id="L332">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L334">            TypedQuery&lt;Long&gt; query = em.createQuery(</span>
+                    &quot;SELECT COUNT(t) FROM Temporada t&quot;,
+                    Long.class
+            );
+<span class="fc" id="L338">            Long count = query.getSingleResult();</span>
+<span class="fc" id="L339">            logger.debug(&quot;Total de temporadas: {}&quot;, count);</span>
+<span class="fc" id="L340">            return count;</span>
+<span class="nc" id="L341">        } catch (Exception e) {</span>
+<span class="nc" id="L342">            logger.error(&quot;Error al contar temporadas&quot;, e);</span>
+<span class="nc" id="L343">            return 0;</span>
+        } finally {
+<span class="fc" id="L345">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Obtiene el número de carreras de una temporada.
+     *
+     * @param anio Año de la temporada
+     * @return Número de carreras
+     */
+    public long contarCarrerasPorTemporada(Integer anio) {
+<span class="fc" id="L356">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L358">            TypedQuery&lt;Long&gt; query = em.createQuery(</span>
+                    &quot;SELECT COUNT(c) FROM Carrera c WHERE c.temporada.anio = :anio&quot;,
+                    Long.class
+            );
+<span class="fc" id="L362">            query.setParameter(&quot;anio&quot;, anio);</span>
+<span class="fc" id="L363">            Long count = query.getSingleResult();</span>
+<span class="fc" id="L364">            logger.debug(&quot;Temporada {} tiene {} carreras&quot;, anio, count);</span>
+<span class="fc" id="L365">            return count;</span>
+<span class="nc" id="L366">        } catch (Exception e) {</span>
+<span class="nc" id="L367">            logger.error(&quot;Error al contar carreras de temporada: &quot; + anio, e);</span>
+<span class="nc" id="L368">            return 0;</span>
+        } finally {
+<span class="fc" id="L370">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Obtiene estadísticas de una temporada.
+     *
+     * @param anio Año de la temporada
+     * @return Array con: [carreras, resultados, pilotos únicos]
+     */
+    public long[] obtenerEstadisticas(Integer anio) {
+<span class="fc" id="L381">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+            // Carreras
+<span class="fc" id="L384">            TypedQuery&lt;Long&gt; queryCarreras = em.createQuery(</span>
+                    &quot;SELECT COUNT(c) FROM Carrera c WHERE c.temporada.anio = :anio&quot;,
+                    Long.class
+            );
+<span class="fc" id="L388">            queryCarreras.setParameter(&quot;anio&quot;, anio);</span>
+<span class="fc" id="L389">            Long carreras = queryCarreras.getSingleResult();</span>
+
+            // Resultados
+<span class="fc" id="L392">            TypedQuery&lt;Long&gt; queryResultados = em.createQuery(</span>
+                    &quot;SELECT COUNT(r) FROM Resultado r &quot; +
+                            &quot;JOIN r.carrera c WHERE c.temporada.anio = :anio&quot;,
+                    Long.class
+            );
+<span class="fc" id="L397">            queryResultados.setParameter(&quot;anio&quot;, anio);</span>
+<span class="fc" id="L398">            Long resultados = queryResultados.getSingleResult();</span>
+
+            // Pilotos únicos
+<span class="fc" id="L401">            TypedQuery&lt;Long&gt; queryPilotos = em.createQuery(</span>
+                    &quot;SELECT COUNT(DISTINCT r.piloto.id) FROM Resultado r &quot; +
+                            &quot;JOIN r.carrera c WHERE c.temporada.anio = :anio&quot;,
+                    Long.class
+            );
+<span class="fc" id="L406">            queryPilotos.setParameter(&quot;anio&quot;, anio);</span>
+<span class="fc" id="L407">            Long pilotos = queryPilotos.getSingleResult();</span>
+
+<span class="fc" id="L409">            return new long[]{carreras, resultados, pilotos};</span>
+
+<span class="nc" id="L411">        } catch (Exception e) {</span>
+<span class="nc" id="L412">            logger.error(&quot;Error al obtener estadísticas de temporada: &quot; + anio, e);</span>
+<span class="nc" id="L413">            return new long[]{0, 0, 0};</span>
+        } finally {
+<span class="fc" id="L415">            JPAUtil.close(em);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

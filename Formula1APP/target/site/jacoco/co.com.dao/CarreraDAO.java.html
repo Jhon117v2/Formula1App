@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CarreraDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.dao</a> &gt; <span class="el_source">CarreraDAO.java</span></div><h1>CarreraDAO.java</h1><pre class="source lang-java linenums">package co.com.dao;
+
+import co.com.model.Carrera;
+import co.com.util.JPAUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * DAO para gestionar operaciones CRUD de la entidad Carrera.
+ */
+<span class="fc" id="L18">public class CarreraDAO {</span>
+<span class="fc" id="L19">    private static final Logger logger = LoggerFactory.getLogger(CarreraDAO.class);</span>
+
+    /**
+     * Obtiene todas las carreras ordenadas por fecha.
+     *
+     * @return Lista de todas las carreras
+     */
+    public List&lt;Carrera&gt; findAll() {
+<span class="fc" id="L27">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L29">            TypedQuery&lt;Carrera&gt; query = em.createQuery(</span>
+                    &quot;SELECT c FROM Carrera c ORDER BY c.fecha&quot;,
+                    Carrera.class
+            );
+<span class="fc" id="L33">            List&lt;Carrera&gt; carreras = query.getResultList();</span>
+<span class="fc" id="L34">            logger.info(&quot;Se obtuvieron {} carreras&quot;, carreras.size());</span>
+<span class="fc" id="L35">            return carreras;</span>
+<span class="nc" id="L36">        } catch (Exception e) {</span>
+<span class="nc" id="L37">            logger.error(&quot;Error al listar carreras&quot;, e);</span>
+<span class="nc" id="L38">            throw new RuntimeException(&quot;Error al obtener carreras&quot;, e);</span>
+        } finally {
+<span class="fc" id="L40">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Obtiene las carreras de una temporada específica ordenadas por número de GP.
+     *
+     * @param anio Año de la temporada
+     * @return Lista de carreras de esa temporada
+     */
+    public List&lt;Carrera&gt; findByTemporada(Integer anio) {
+<span class="fc" id="L51">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L53">            TypedQuery&lt;Carrera&gt; query = em.createQuery(</span>
+                    &quot;SELECT c FROM Carrera c JOIN FETCH c.circuito JOIN c.temporada t WHERE t.anio = :anio ORDER BY c.gpNumero&quot;,
+                    Carrera.class
+            );
+<span class="fc" id="L57">            query.setParameter(&quot;anio&quot;, anio);</span>
+<span class="fc" id="L58">            List&lt;Carrera&gt; carreras = query.getResultList();</span>
+<span class="fc" id="L59">            logger.info(&quot;Se obtuvieron {} carreras para la temporada {}&quot;, carreras.size(), anio);</span>
+<span class="fc" id="L60">            return carreras;</span>
+<span class="nc" id="L61">        } catch (Exception e) {</span>
+<span class="nc" id="L62">            logger.error(&quot;Error al listar carreras por temporada: &quot; + anio, e);</span>
+<span class="nc" id="L63">            throw new RuntimeException(&quot;Error al obtener carreras de la temporada&quot;, e);</span>
+        } finally {
+<span class="fc" id="L65">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca una carrera por su ID.
+     *
+     * @param id ID de la carrera
+     * @return Optional con la carrera si existe
+     */
+    public Optional&lt;Carrera&gt; findById(Long id) {
+<span class="fc" id="L76">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L78">            TypedQuery&lt;Carrera&gt; query = em.createQuery(</span>
+                    &quot;SELECT c FROM Carrera c JOIN FETCH c.temporada JOIN FETCH c.circuito WHERE c.id = :id&quot;,
+                    Carrera.class
+            );
+<span class="fc" id="L82">            query.setParameter(&quot;id&quot;, id);</span>
+<span class="fc" id="L83">            Carrera carrera = query.getSingleResult();</span>
+<span class="fc" id="L84">            logger.debug(&quot;Carrera encontrada con ID {}: {}&quot;, id, carrera.getNombreGp());</span>
+<span class="fc" id="L85">            return Optional.of(carrera);</span>
+<span class="fc" id="L86">        } catch (NoResultException e) {</span>
+<span class="fc" id="L87">            logger.debug(&quot;No se encontró carrera con ID: {}&quot;, id);</span>
+<span class="fc" id="L88">            return Optional.empty();</span>
+<span class="nc" id="L89">        } catch (Exception e) {</span>
+<span class="nc" id="L90">            logger.error(&quot;Error al buscar carrera por ID: &quot; + id, e);</span>
+<span class="nc" id="L91">            return Optional.empty();</span>
+        } finally {
+<span class="fc" id="L93">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca carreras por nombre de GP (búsqueda parcial, case-insensitive).
+     *
+     * @param nombre Nombre o parte del nombre del GP
+     * @return Lista de carreras que coinciden
+     */
+    public List&lt;Carrera&gt; findByNombreGp(String nombre) {
+<span class="fc" id="L104">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+            // Validar entrada nula o vacía
+<span class="fc bfc" id="L107" title="All 4 branches covered.">            if (nombre == null || nombre.trim().isEmpty()) {</span>
+<span class="fc" id="L108">                logger.debug(&quot;Entrada nula o vacía, devolviendo lista vacía&quot;);</span>
+<span class="fc" id="L109">                return Collections.emptyList();</span>
+            }
+
+<span class="fc" id="L112">            TypedQuery&lt;Carrera&gt; query = em.createQuery(</span>
+                    &quot;SELECT c FROM Carrera c WHERE LOWER(c.nombreGp) LIKE LOWER(:nombre) ORDER BY c.fecha&quot;,
+                    Carrera.class
+            );
+<span class="fc" id="L116">            query.setParameter(&quot;nombre&quot;, &quot;%&quot; + nombre + &quot;%&quot;);</span>
+<span class="fc" id="L117">            return query.getResultList();</span>
+<span class="nc" id="L118">        } catch (Exception e) {</span>
+<span class="nc" id="L119">            logger.error(&quot;Error al buscar carreras por nombre: &quot; + nombre, e);</span>
+<span class="nc" id="L120">            throw new RuntimeException(&quot;Error al buscar carreras por nombre&quot;, e);</span>
+        } finally {
+<span class="fc" id="L122">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Guarda una nueva carrera en la base de datos.
+     *
+     * @param carrera Carrera a guardar
+     * @return Carrera guardada con ID asignado
+     */
+    public Carrera save(Carrera carrera) {
+<span class="fc" id="L133">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+            // Validación de campos obligatorios
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">            if (carrera == null) {</span>
+<span class="nc" id="L137">                throw new RuntimeException(&quot;La carrera no puede ser nula&quot;);</span>
+            }
+<span class="pc bpc" id="L139" title="1 of 4 branches missed.">            if (carrera.getNombreGp() == null || carrera.getNombreGp().trim().isEmpty()) {</span>
+<span class="fc" id="L140">                throw new RuntimeException(&quot;El nombre del Gran Premio es obligatorio&quot;);</span>
+            }
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            if (carrera.getFecha() == null) {</span>
+<span class="nc" id="L143">                throw new RuntimeException(&quot;La fecha de la carrera es obligatoria&quot;);</span>
+            }
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">            if (carrera.getTemporada() == null) {</span>
+<span class="nc" id="L146">                throw new RuntimeException(&quot;La temporada es obligatoria&quot;);</span>
+            }
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">            if (carrera.getCircuito() == null) {</span>
+<span class="nc" id="L149">                throw new RuntimeException(&quot;El circuito es obligatorio&quot;);</span>
+            }
+
+<span class="fc" id="L152">            em.getTransaction().begin();</span>
+<span class="fc" id="L153">            em.persist(carrera);</span>
+<span class="fc" id="L154">            em.getTransaction().commit();</span>
+<span class="fc" id="L155">            logger.info(&quot;Carrera guardada exitosamente: {} (ID: {})&quot;,</span>
+<span class="fc" id="L156">                    carrera.getNombreGp(), carrera.getId());</span>
+<span class="fc" id="L157">            return carrera;</span>
+<span class="fc" id="L158">        } catch (Exception e) {</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L160">                em.getTransaction().rollback();</span>
+            }
+<span class="fc" id="L162">            logger.error(&quot;Error al guardar carrera: &quot; + carrera.getNombreGp(), e);</span>
+<span class="fc" id="L163">            throw new RuntimeException(&quot;Error al guardar carrera&quot;, e);</span>
+        } finally {
+<span class="fc" id="L165">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Actualiza una carrera existente.
+     *
+     * @param carrera Carrera con datos actualizados
+     * @return Carrera actualizada
+     */
+    public Carrera update(Carrera carrera) {
+<span class="fc" id="L176">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L178">            em.getTransaction().begin();</span>
+<span class="fc" id="L179">            Carrera updated = em.merge(carrera);</span>
+<span class="fc" id="L180">            em.getTransaction().commit();</span>
+<span class="fc" id="L181">            logger.info(&quot;Carrera actualizada exitosamente: {} (ID: {})&quot;,</span>
+<span class="fc" id="L182">                    updated.getNombreGp(), updated.getId());</span>
+<span class="fc" id="L183">            return updated;</span>
+<span class="nc" id="L184">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L186">                em.getTransaction().rollback();</span>
+            }
+<span class="nc" id="L188">            logger.error(&quot;Error al actualizar carrera: &quot; + carrera.getNombreGp(), e);</span>
+<span class="nc" id="L189">            throw new RuntimeException(&quot;Error al actualizar carrera&quot;, e);</span>
+        } finally {
+<span class="fc" id="L191">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Elimina una carrera por su ID.
+     *
+     * @param id ID de la carrera a eliminar
+     * @return true si se eliminó, false si no existía
+     */
+    public boolean delete(Long id) {
+<span class="fc" id="L202">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L204">            em.getTransaction().begin();</span>
+<span class="fc" id="L205">            Carrera carrera = em.find(Carrera.class, id);</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">            if (carrera != null) {</span>
+<span class="fc" id="L207">                em.remove(carrera);</span>
+<span class="fc" id="L208">                em.getTransaction().commit();</span>
+<span class="fc" id="L209">                logger.info(&quot;Carrera eliminada: {} (ID: {})&quot;, carrera.getNombreGp(), id);</span>
+<span class="fc" id="L210">                return true;</span>
+            } else {
+<span class="fc" id="L212">                em.getTransaction().rollback();</span>
+<span class="fc" id="L213">                logger.warn(&quot;No se encontró carrera con ID: {}&quot;, id);</span>
+<span class="fc" id="L214">                return false;</span>
+            }
+<span class="nc" id="L216">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L218">                em.getTransaction().rollback();</span>
+            }
+<span class="nc" id="L220">            logger.error(&quot;Error al eliminar carrera con ID: &quot; + id, e);</span>
+<span class="nc" id="L221">            throw new RuntimeException(&quot;Error al eliminar carrera&quot;, e);</span>
+        } finally {
+<span class="fc" id="L223">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Cuenta el total de carreras en la base de datos.
+     *
+     * @return Número total de carreras
+     */
+    public long count() {
+<span class="fc" id="L233">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L235">            TypedQuery&lt;Long&gt; query = em.createQuery(</span>
+                    &quot;SELECT COUNT(c) FROM Carrera c&quot;,
+                    Long.class
+            );
+<span class="fc" id="L239">            return query.getSingleResult();</span>
+<span class="nc" id="L240">        } catch (Exception e) {</span>
+<span class="nc" id="L241">            logger.error(&quot;Error al contar carreras&quot;, e);</span>
+<span class="nc" id="L242">            return 0;</span>
+        } finally {
+<span class="fc" id="L244">            JPAUtil.close(em);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

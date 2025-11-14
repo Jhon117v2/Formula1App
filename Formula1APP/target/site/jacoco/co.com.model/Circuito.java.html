@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Circuito.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.model</a> &gt; <span class="el_source">Circuito.java</span></div><h1>Circuito.java</h1><pre class="source lang-java linenums">package co.com.model;
+
+
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = &quot;circuito&quot;)
+public class Circuito {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = &quot;nombre&quot;, nullable = false, length = 150)
+    private String nombre;
+
+    @Column(name = &quot;ubicacion&quot;, length = 150)
+    private String ubicacion;
+
+<span class="fc" id="L22">    @OneToMany(mappedBy = &quot;circuito&quot;, cascade = CascadeType.ALL, orphanRemoval = true)</span>
+    private List&lt;Carrera&gt; carreras = new ArrayList&lt;&gt;();
+
+    // Constructores
+<span class="fc" id="L26">    public Circuito() {</span>
+<span class="fc" id="L27">    }</span>
+
+<span class="fc" id="L29">    public Circuito(String nombre, String ubicacion) {</span>
+<span class="fc" id="L30">        this.nombre = nombre;</span>
+<span class="fc" id="L31">        this.ubicacion = ubicacion;</span>
+<span class="fc" id="L32">    }</span>
+
+    // Getters y Setters
+    public Long getId() {
+<span class="fc" id="L36">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="fc" id="L40">        this.id = id;</span>
+<span class="fc" id="L41">    }</span>
+
+    public String getNombre() {
+<span class="fc" id="L44">        return nombre;</span>
+    }
+
+    public void setNombre(String nombre) {
+<span class="fc" id="L48">        this.nombre = nombre;</span>
+<span class="fc" id="L49">    }</span>
+
+    public String getUbicacion() {
+<span class="fc" id="L52">        return ubicacion;</span>
+    }
+
+    public void setUbicacion(String ubicacion) {
+<span class="fc" id="L56">        this.ubicacion = ubicacion;</span>
+<span class="fc" id="L57">    }</span>
+
+    public List&lt;Carrera&gt; getCarreras() {
+<span class="fc" id="L60">        return carreras;</span>
+    }
+
+    public void setCarreras(List&lt;Carrera&gt; carreras) {
+<span class="fc" id="L64">        this.carreras = carreras;</span>
+<span class="fc" id="L65">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L69">        return &quot;Circuito{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, nombre='&quot; + nombre + '\'' +
+                &quot;, ubicacion='&quot; + ubicacion + '\'' +
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

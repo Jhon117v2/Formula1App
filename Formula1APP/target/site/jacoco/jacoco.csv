@@ -1,0 +1,16 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+Formula1APP,co.com.dao,TemporadaDAO,179,491,9,17,47,122,6,23,0,16
+Formula1APP,co.com.dao,CircuitoDAO,134,304,11,17,33,82,8,17,0,11
+Formula1APP,co.com.dao,ConstructorDAO,113,314,11,19,27,85,9,16,0,10
+Formula1APP,co.com.dao,CarreraDAO,116,277,10,14,30,75,8,14,0,10
+Formula1APP,co.com.dao,PilotoDAO,142,382,13,27,36,100,10,22,0,12
+Formula1APP,co.com.dao,ResultadoDAO,0,337,1,13,0,78,1,12,0,6
+Formula1APP,co.com.config,ConfiguracionTemporada,3,30,0,4,1,4,1,6,1,4
+Formula1APP,co.com.model,ResultadoSprint,0,70,0,0,0,31,0,19,0,19
+Formula1APP,co.com.model,Temporada,4,60,0,0,2,20,1,10,1,10
+Formula1APP,co.com.model,Resultado,48,50,0,0,14,23,8,13,8,13
+Formula1APP,co.com.model,Piloto,0,77,0,0,0,27,0,15,0,15
+Formula1APP,co.com.model,Carrera,0,103,0,0,0,36,0,19,0,19
+Formula1APP,co.com.model,Circuito,0,58,0,0,0,20,0,11,0,11
+Formula1APP,co.com.model,Constructor,0,76,0,0,0,26,0,13,0,13
+Formula1APP,co.com.constants,F1PointsSystem,13,121,4,4,2,17,4,5,2,3

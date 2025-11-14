@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Temporada.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.model</a> &gt; <span class="el_source">Temporada.java</span></div><h1>Temporada.java</h1><pre class="source lang-java linenums">package co.com.model;
+
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = &quot;temporada&quot;)
+public class Temporada {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = &quot;anio&quot;, nullable = false, unique = true)
+    private Integer anio;
+
+<span class="fc" id="L18">    @OneToMany(mappedBy = &quot;temporada&quot;, cascade = CascadeType.ALL, orphanRemoval = true)</span>
+    private List&lt;Carrera&gt; carreras = new ArrayList&lt;&gt;();
+
+    // Constructores
+<span class="fc" id="L22">    public Temporada() {</span>
+<span class="fc" id="L23">    }</span>
+
+<span class="fc" id="L25">    public Temporada(Integer anio) {</span>
+<span class="fc" id="L26">        this.anio = anio;</span>
+<span class="fc" id="L27">    }</span>
+
+    // Getters y Setters
+    public Long getId() {
+<span class="fc" id="L31">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="fc" id="L35">        this.id = id;</span>
+<span class="fc" id="L36">    }</span>
+
+    public Integer getAnio() {
+<span class="fc" id="L39">        return anio;</span>
+    }
+
+    public void setAnio(Integer anio) {
+<span class="fc" id="L43">        this.anio = anio;</span>
+<span class="fc" id="L44">    }</span>
+
+    public List&lt;Carrera&gt; getCarreras() {
+<span class="fc" id="L47">        return carreras;</span>
+    }
+
+    public void setCarreras(List&lt;Carrera&gt; carreras) {
+<span class="nc" id="L51">        this.carreras = carreras;</span>
+<span class="nc" id="L52">    }</span>
+
+    // Métodos de utilidad
+    public void addCarrera(Carrera carrera) {
+<span class="fc" id="L56">        carreras.add(carrera);</span>
+<span class="fc" id="L57">        carrera.setTemporada(this);</span>
+<span class="fc" id="L58">    }</span>
+
+    public void removeCarrera(Carrera carrera) {
+<span class="fc" id="L61">        carreras.remove(carrera);</span>
+<span class="fc" id="L62">        carrera.setTemporada(null);</span>
+<span class="fc" id="L63">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L67">        return &quot;Temporada{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, anio=&quot; + anio +
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

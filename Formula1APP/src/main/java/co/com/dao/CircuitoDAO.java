@@ -1,12 +1,13 @@
 package co.com.dao;
 
 import co.com.model.Circuito;
-import co.com.util.JPAUtil;
+import co.com.util.DatabaseManager;  // Mejora: Importar la nueva clase de gestión de conexiones
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +16,7 @@ import java.util.Optional;
  */
 public class CircuitoDAO {
     private static final Logger logger = LoggerFactory.getLogger(CircuitoDAO.class);
+    private final DatabaseManager dbManager = new DatabaseManager();  // Mejora: Inyectar DatabaseManager para DIP y SRP
 
     /**
      * Obtiene todos los circuitos ordenados por nombre.
@@ -22,7 +24,7 @@ public class CircuitoDAO {
      * @return Lista de todos los circuitos
      */
     public List<Circuito> findAll() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Circuito> query = em.createQuery(
                     "SELECT c FROM Circuito c ORDER BY c.nombre",
@@ -35,7 +37,7 @@ public class CircuitoDAO {
             logger.error("Error al listar circuitos", e);
             throw new RuntimeException("Error al obtener circuitos", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -46,7 +48,7 @@ public class CircuitoDAO {
      * @return Lista de circuitos de esa temporada
      */
     public List<Circuito> findByTemporada(Integer anio) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Circuito> query = em.createQuery(
                     "SELECT DISTINCT ci FROM Circuito ci " +
@@ -64,7 +66,7 @@ public class CircuitoDAO {
             logger.error("Error al listar circuitos por temporada: " + anio, e);
             throw new RuntimeException("Error al obtener circuitos de la temporada", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -75,7 +77,7 @@ public class CircuitoDAO {
      * @return Optional con el circuito si existe
      */
     public Optional<Circuito> findById(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             Circuito circuito = em.find(Circuito.class, id);
             if (circuito != null) {
@@ -88,7 +90,7 @@ public class CircuitoDAO {
             logger.error("Error al buscar circuito por ID: " + id, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -99,8 +101,14 @@ public class CircuitoDAO {
      * @return Lista de circuitos que coinciden
      */
     public List<Circuito> findByNombre(String nombre) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
+            // Validar entrada nula o vacía
+            if (nombre == null || nombre.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
+
             TypedQuery<Circuito> query = em.createQuery(
                     "SELECT c FROM Circuito c WHERE LOWER(c.nombre) LIKE LOWER(:nombre) ORDER BY c.nombre",
                     Circuito.class
@@ -111,7 +119,7 @@ public class CircuitoDAO {
             logger.error("Error al buscar circuitos por nombre: " + nombre, e);
             throw new RuntimeException("Error al buscar circuitos por nombre", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -122,8 +130,14 @@ public class CircuitoDAO {
      * @return Lista de circuitos en esa ubicación
      */
     public List<Circuito> findByUbicacion(String ubicacion) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
+            // Validar entrada nula o vacía
+            if (ubicacion == null || ubicacion.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
+
             TypedQuery<Circuito> query = em.createQuery(
                     "SELECT c FROM Circuito c WHERE LOWER(c.ubicacion) LIKE LOWER(:ubicacion) ORDER BY c.nombre",
                     Circuito.class
@@ -134,7 +148,7 @@ public class CircuitoDAO {
             logger.error("Error al buscar circuitos por ubicación: " + ubicacion, e);
             throw new RuntimeException("Error al buscar circuitos por ubicación", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -145,7 +159,7 @@ public class CircuitoDAO {
      * @return Circuito guardado con ID asignado
      */
     public Circuito save(Circuito circuito) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(circuito);
@@ -160,7 +174,7 @@ public class CircuitoDAO {
             logger.error("Error al guardar circuito: " + circuito.getNombre(), e);
             throw new RuntimeException("Error al guardar circuito", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -171,11 +185,35 @@ public class CircuitoDAO {
      * @return Circuito actualizado
      */
     public Circuito update(Circuito circuito) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
+            // Validación de parámetros
+            if (circuito == null) {
+                throw new RuntimeException("El circuito no puede ser nulo");
+            }
+            if (circuito.getId() == null) {
+                throw new RuntimeException("El circuito debe tener un ID válido para actualizar");
+            }
+
             em.getTransaction().begin();
-            Circuito updated = em.merge(circuito);
+
+            // Verificar que el circuito existe antes de actualizar
+            Circuito existingCircuito = em.find(Circuito.class, circuito.getId());
+            if (existingCircuito == null) {
+                em.getTransaction().rollback();
+                logger.warn("No se encontró circuito con ID: {}", circuito.getId());
+                throw new RuntimeException("No se puede actualizar un circuito que no existe (ID: " + circuito.getId() + ")");
+            }
+
+            // Actualizar los datos
+            existingCircuito.setNombre(circuito.getNombre());
+            if (circuito.getUbicacion() != null) {
+                existingCircuito.setUbicacion(circuito.getUbicacion());
+            }
+
+            Circuito updated = em.merge(existingCircuito);
             em.getTransaction().commit();
+
             logger.info("Circuito actualizado exitosamente: {} (ID: {})",
                     updated.getNombre(), updated.getId());
             return updated;
@@ -183,10 +221,10 @@ public class CircuitoDAO {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-            logger.error("Error al actualizar circuito: " + circuito.getNombre(), e);
+            logger.error("Error al actualizar circuito: " + (circuito != null ? circuito.getNombre() : "null"), e);
             throw new RuntimeException("Error al actualizar circuito", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -197,7 +235,7 @@ public class CircuitoDAO {
      * @return true si se eliminó, false si no existía
      */
     public boolean delete(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             Circuito circuito = em.find(Circuito.class, id);
@@ -218,7 +256,7 @@ public class CircuitoDAO {
             logger.error("Error al eliminar circuito con ID: " + id, e);
             throw new RuntimeException("Error al eliminar circuito", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -228,7 +266,7 @@ public class CircuitoDAO {
      * @return Número total de circuitos
      */
     public long count() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
                     "SELECT COUNT(c) FROM Circuito c",
@@ -239,7 +277,7 @@ public class CircuitoDAO {
             logger.error("Error al contar circuitos", e);
             return 0;
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 }

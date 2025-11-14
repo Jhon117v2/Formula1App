@@ -1,12 +1,13 @@
 package co.com.dao;
 
 import co.com.model.Piloto;
-import co.com.util.JPAUtil;
+import co.com.util.DatabaseManager;  // Mejora: Importar la nueva clase de gestión de conexiones
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +16,7 @@ import java.util.Optional;
  */
 public class PilotoDAO {
     private static final Logger logger = LoggerFactory.getLogger(PilotoDAO.class);
+    private final DatabaseManager dbManager = new DatabaseManager();  // Mejora: Inyectar DatabaseManager para DIP y SRP
 
     /**
      * Obtiene todos los pilotos ordenados por nombre.
@@ -23,7 +25,7 @@ public class PilotoDAO {
      * @return Lista de todos los pilotos
      */
     public List<Piloto> findAll() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT DISTINCT p FROM Piloto p LEFT JOIN FETCH p.constructor ORDER BY p.nombre",
@@ -36,7 +38,7 @@ public class PilotoDAO {
             logger.error("Error al listar pilotos", e);
             throw new RuntimeException("Error al obtener pilotos", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -47,7 +49,7 @@ public class PilotoDAO {
      * @return Optional con el piloto si existe
      */
     public Optional<Piloto> findById(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor WHERE p.id = :id",
@@ -67,7 +69,7 @@ public class PilotoDAO {
             logger.error("Error al buscar piloto por ID: " + id, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -78,8 +80,12 @@ public class PilotoDAO {
      * @return Optional con el piloto si existe
      */
     public Optional<Piloto> findByNombre(String nombre) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
+            if (nombre == null || nombre.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo Optional vacío");
+                return Optional.empty();
+            }
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor " +
                             "WHERE LOWER(p.nombre) LIKE LOWER(:nombre)",
@@ -100,7 +106,7 @@ public class PilotoDAO {
             logger.error("Error al buscar piloto por nombre: " + nombre, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -111,8 +117,12 @@ public class PilotoDAO {
      * @return Lista de pilotos con esa nacionalidad
      */
     public List<Piloto> findByNacionalidad(String nacionalidad) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
+            if (nacionalidad == null || nacionalidad.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor " +
                             "WHERE LOWER(p.nacionalidad) = LOWER(:nacionalidad) ORDER BY p.nombre",
@@ -124,7 +134,7 @@ public class PilotoDAO {
             logger.error("Error al buscar pilotos por nacionalidad: " + nacionalidad, e);
             throw new RuntimeException("Error al buscar pilotos por nacionalidad", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -135,8 +145,12 @@ public class PilotoDAO {
      * @return Lista de pilotos del constructor
      */
     public List<Piloto> findByConstructor(Long constructorId) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
+            if (constructorId == null) {
+                logger.debug("ID de constructor nulo, devolviendo lista vacía");
+                return Collections.emptyList();
+            }
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p WHERE p.constructor.id = :constructorId ORDER BY p.nombre",
                     Piloto.class
@@ -147,7 +161,7 @@ public class PilotoDAO {
             logger.error("Error al buscar pilotos por constructor ID: " + constructorId, e);
             throw new RuntimeException("Error al buscar pilotos por constructor", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -158,8 +172,12 @@ public class PilotoDAO {
      * @return Optional con el piloto si existe
      */
     public Optional<Piloto> findByDorsal(String dorsal) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
+            if (dorsal == null || dorsal.trim().isEmpty()) {
+                logger.debug("Entrada nula o vacía, devolviendo Optional vacío");
+                return Optional.empty();
+            }
             TypedQuery<Piloto> query = em.createQuery(
                     "SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor WHERE p.dorsal = :dorsal",
                     Piloto.class
@@ -170,7 +188,7 @@ public class PilotoDAO {
             logger.error("Error al buscar piloto por dorsal: " + dorsal, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -181,7 +199,7 @@ public class PilotoDAO {
      * @return Piloto guardado con ID asignado
      */
     public Piloto save(Piloto piloto) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(piloto);
@@ -195,7 +213,7 @@ public class PilotoDAO {
             logger.error("Error al guardar piloto: " + piloto.getNombre(), e);
             throw new RuntimeException("Error al guardar piloto", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -206,21 +224,51 @@ public class PilotoDAO {
      * @return Piloto actualizado
      */
     public Piloto update(Piloto piloto) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
+            // Validación de parámetros
+            if (piloto == null) {
+                throw new RuntimeException("El piloto no puede ser nulo");
+            }
+            if (piloto.getId() == null) {
+                throw new RuntimeException("El piloto debe tener un ID válido para actualizar");
+            }
+
             em.getTransaction().begin();
-            Piloto updated = em.merge(piloto);
+
+            // Verificar que el piloto existe antes de actualizar
+            Piloto existingPiloto = em.find(Piloto.class, piloto.getId());
+            if (existingPiloto == null) {
+                em.getTransaction().rollback();
+                logger.warn("No se encontró piloto con ID: {}", piloto.getId());
+                throw new RuntimeException("No se puede actualizar un piloto que no existe (ID: " + piloto.getId() + ")");
+            }
+
+            // Actualizar los datos
+            existingPiloto.setNombre(piloto.getNombre());
+            if (piloto.getDorsal() != null) {
+                existingPiloto.setDorsal(piloto.getDorsal());
+            }
+            if (piloto.getNacionalidad() != null) {
+                existingPiloto.setNacionalidad(piloto.getNacionalidad());
+            }
+            if (piloto.getConstructor() != null) {
+                existingPiloto.setConstructor(piloto.getConstructor());
+            }
+
+            Piloto updated = em.merge(existingPiloto);
             em.getTransaction().commit();
+
             logger.info("Piloto actualizado exitosamente: {} (ID: {})", updated.getNombre(), updated.getId());
             return updated;
         } catch (Exception e) {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-            logger.error("Error al actualizar piloto: " + piloto.getNombre(), e);
+            logger.error("Error al actualizar piloto: " + (piloto != null ? piloto.getNombre() : "null"), e);
             throw new RuntimeException("Error al actualizar piloto", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -231,7 +279,7 @@ public class PilotoDAO {
      * @return true si se eliminó, false si no existía
      */
     public boolean delete(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             Piloto piloto = em.find(Piloto.class, id);
@@ -252,7 +300,7 @@ public class PilotoDAO {
             logger.error("Error al eliminar piloto con ID: " + id, e);
             throw new RuntimeException("Error al eliminar piloto", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -262,7 +310,7 @@ public class PilotoDAO {
      * @return Número total de pilotos
      */
     public long count() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
                     "SELECT COUNT(p) FROM Piloto p",
@@ -273,7 +321,7 @@ public class PilotoDAO {
             logger.error("Error al contar pilotos", e);
             return 0;
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 }

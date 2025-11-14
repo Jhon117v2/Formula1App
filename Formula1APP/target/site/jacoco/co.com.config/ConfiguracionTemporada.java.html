@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfiguracionTemporada.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.config</a> &gt; <span class="el_source">ConfiguracionTemporada.java</span></div><h1>ConfiguracionTemporada.java</h1><pre class="source lang-java linenums">package co.com.config;
+
+import java.time.LocalDate;
+
+<span class="nc" id="L5">public class ConfiguracionTemporada {</span>
+
+    // Temporadas disponibles
+    public static final int TEMPORADA_2024 = 2024;
+    public static final int TEMPORADA_2025 = 2025;
+    public static final int TEMPORADA_ACTUAL = TEMPORADA_2025;
+
+    // Fecha de congelación del proyecto
+    // Después de esta fecha, se pueden ingresar resultados manualmente
+<span class="fc" id="L14">    public static final LocalDate FECHA_CONGELACION = LocalDate.of(2025, 1, 7);</span>
+
+    /**
+     * Verifica si una fecha está después de la fecha de congelación.
+     *
+     * @param fecha Fecha a verificar
+     * @return true si está después de la congelación
+     */
+    public static boolean esDespuesDeCongelacion(LocalDate fecha) {
+<span class="fc" id="L23">        return fecha.isAfter(FECHA_CONGELACION);</span>
+    }
+
+    /**
+     * Verifica si una carrera permite ingreso manual de resultados.
+     *
+     * @param fechaCarrera Fecha de la carrera
+     * @return true si permite ingreso manual
+     */
+    public static boolean permiteIngresoManual(LocalDate fechaCarrera) {
+<span class="fc bfc" id="L33" title="All 4 branches covered.">        return esDespuesDeCongelacion(fechaCarrera) || fechaCarrera.equals(FECHA_CONGELACION);</span>
+    }
+
+    /**
+     * Obtiene un mensaje sobre el estado de congelación.
+     *
+     * @return Mensaje informativo
+     */
+    public static String getMensajeCongelacion() {
+<span class="fc" id="L42">        return String.format(</span>
+                &quot;Fecha de congelación del proyecto: %s\n&quot; +
+                        &quot;Las carreras posteriores a esta fecha permiten ingreso manual de resultados.&quot;,
+                FECHA_CONGELACION
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

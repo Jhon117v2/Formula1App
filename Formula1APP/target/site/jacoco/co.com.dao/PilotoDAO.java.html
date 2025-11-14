@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PilotoDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Formula1APP</a> &gt; <a href="index.source.html" class="el_package">co.com.dao</a> &gt; <span class="el_source">PilotoDAO.java</span></div><h1>PilotoDAO.java</h1><pre class="source lang-java linenums">package co.com.dao;
+
+import co.com.model.Piloto;
+import co.com.util.JPAUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * DAO para gestionar operaciones CRUD de la entidad Piloto.
+ */
+<span class="fc" id="L17">public class PilotoDAO {</span>
+<span class="fc" id="L18">    private static final Logger logger = LoggerFactory.getLogger(PilotoDAO.class);</span>
+
+    /**
+     * Obtiene todos los pilotos ordenados por nombre.
+     * Utiliza LEFT JOIN FETCH para cargar el constructor asociado.
+     *
+     * @return Lista de todos los pilotos
+     */
+    public List&lt;Piloto&gt; findAll() {
+<span class="fc" id="L27">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L29">            TypedQuery&lt;Piloto&gt; query = em.createQuery(</span>
+                    &quot;SELECT DISTINCT p FROM Piloto p LEFT JOIN FETCH p.constructor ORDER BY p.nombre&quot;,
+                    Piloto.class
+            );
+<span class="fc" id="L33">            List&lt;Piloto&gt; pilotos = query.getResultList();</span>
+<span class="fc" id="L34">            logger.info(&quot;Se obtuvieron {} pilotos&quot;, pilotos.size());</span>
+<span class="fc" id="L35">            return pilotos;</span>
+<span class="nc" id="L36">        } catch (Exception e) {</span>
+<span class="nc" id="L37">            logger.error(&quot;Error al listar pilotos&quot;, e);</span>
+<span class="nc" id="L38">            throw new RuntimeException(&quot;Error al obtener pilotos&quot;, e);</span>
+        } finally {
+<span class="fc" id="L40">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca un piloto por su ID.
+     *
+     * @param id ID del piloto
+     * @return Optional con el piloto si existe
+     */
+    public Optional&lt;Piloto&gt; findById(Long id) {
+<span class="fc" id="L51">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L53">            TypedQuery&lt;Piloto&gt; query = em.createQuery(</span>
+                    &quot;SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor WHERE p.id = :id&quot;,
+                    Piloto.class
+            );
+<span class="fc" id="L57">            query.setParameter(&quot;id&quot;, id);</span>
+<span class="fc" id="L58">            Optional&lt;Piloto&gt; result = query.getResultStream().findFirst();</span>
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            if (result.isPresent()) {</span>
+<span class="fc" id="L61">                logger.debug(&quot;Piloto encontrado con ID {}: {}&quot;, id, result.get().getNombre());</span>
+            } else {
+<span class="fc" id="L63">                logger.debug(&quot;No se encontró piloto con ID: {}&quot;, id);</span>
+            }
+
+<span class="fc" id="L66">            return result;</span>
+<span class="nc" id="L67">        } catch (Exception e) {</span>
+<span class="nc" id="L68">            logger.error(&quot;Error al buscar piloto por ID: &quot; + id, e);</span>
+<span class="nc" id="L69">            return Optional.empty();</span>
+        } finally {
+<span class="fc" id="L71">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca un piloto por nombre (búsqueda parcial, case-insensitive).
+     *
+     * @param nombre Nombre o parte del nombre del piloto
+     * @return Optional con el piloto si existe
+     */
+    public Optional&lt;Piloto&gt; findByNombre(String nombre) {
+<span class="fc" id="L82">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc bfc" id="L84" title="All 4 branches covered.">            if (nombre == null || nombre.trim().isEmpty()) {</span>
+<span class="fc" id="L85">                logger.debug(&quot;Entrada nula o vacía, devolviendo Optional vacío&quot;);</span>
+<span class="fc" id="L86">                return Optional.empty();</span>
+            }
+<span class="fc" id="L88">            TypedQuery&lt;Piloto&gt; query = em.createQuery(</span>
+                    &quot;SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor &quot; +
+                            &quot;WHERE LOWER(p.nombre) LIKE LOWER(:nombre)&quot;,
+                    Piloto.class
+            );
+<span class="fc" id="L93">            query.setParameter(&quot;nombre&quot;, &quot;%&quot; + nombre + &quot;%&quot;);</span>
+<span class="fc" id="L94">            query.setMaxResults(1);</span>
+<span class="fc" id="L95">            Optional&lt;Piloto&gt; result = query.getResultStream().findFirst();</span>
+
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (result.isPresent()) {</span>
+<span class="fc" id="L98">                logger.debug(&quot;Piloto encontrado: {}&quot;, result.get().getNombre());</span>
+            } else {
+<span class="fc" id="L100">                logger.debug(&quot;No se encontró piloto con nombre: {}&quot;, nombre);</span>
+            }
+
+<span class="fc" id="L103">            return result;</span>
+<span class="nc" id="L104">        } catch (Exception e) {</span>
+<span class="nc" id="L105">            logger.error(&quot;Error al buscar piloto por nombre: &quot; + nombre, e);</span>
+<span class="nc" id="L106">            return Optional.empty();</span>
+        } finally {
+<span class="fc" id="L108">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca pilotos por nacionalidad.
+     *
+     * @param nacionalidad Nacionalidad del piloto
+     * @return Lista de pilotos con esa nacionalidad
+     */
+    public List&lt;Piloto&gt; findByNacionalidad(String nacionalidad) {
+<span class="fc" id="L119">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc bfc" id="L121" title="All 4 branches covered.">            if (nacionalidad == null || nacionalidad.trim().isEmpty()) {</span>
+<span class="fc" id="L122">                logger.debug(&quot;Entrada nula o vacía, devolviendo lista vacía&quot;);</span>
+<span class="fc" id="L123">                return Collections.emptyList();</span>
+            }
+<span class="fc" id="L125">            TypedQuery&lt;Piloto&gt; query = em.createQuery(</span>
+                    &quot;SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor &quot; +
+                            &quot;WHERE LOWER(p.nacionalidad) = LOWER(:nacionalidad) ORDER BY p.nombre&quot;,
+                    Piloto.class
+            );
+<span class="fc" id="L130">            query.setParameter(&quot;nacionalidad&quot;, nacionalidad);</span>
+<span class="fc" id="L131">            return query.getResultList();</span>
+<span class="nc" id="L132">        } catch (Exception e) {</span>
+<span class="nc" id="L133">            logger.error(&quot;Error al buscar pilotos por nacionalidad: &quot; + nacionalidad, e);</span>
+<span class="nc" id="L134">            throw new RuntimeException(&quot;Error al buscar pilotos por nacionalidad&quot;, e);</span>
+        } finally {
+<span class="fc" id="L136">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca pilotos por constructor/equipo.
+     *
+     * @param constructorId ID del constructor
+     * @return Lista de pilotos del constructor
+     */
+    public List&lt;Piloto&gt; findByConstructor(Long constructorId) {
+<span class="fc" id="L147">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            if (constructorId == null) {</span>
+<span class="fc" id="L150">                logger.debug(&quot;ID de constructor nulo, devolviendo lista vacía&quot;);</span>
+<span class="fc" id="L151">                return Collections.emptyList();</span>
+            }
+<span class="fc" id="L153">            TypedQuery&lt;Piloto&gt; query = em.createQuery(</span>
+                    &quot;SELECT p FROM Piloto p WHERE p.constructor.id = :constructorId ORDER BY p.nombre&quot;,
+                    Piloto.class
+            );
+<span class="fc" id="L157">            query.setParameter(&quot;constructorId&quot;, constructorId);</span>
+<span class="fc" id="L158">            return query.getResultList();</span>
+<span class="nc" id="L159">        } catch (Exception e) {</span>
+<span class="nc" id="L160">            logger.error(&quot;Error al buscar pilotos por constructor ID: &quot; + constructorId, e);</span>
+<span class="nc" id="L161">            throw new RuntimeException(&quot;Error al buscar pilotos por constructor&quot;, e);</span>
+        } finally {
+<span class="fc" id="L163">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Busca un piloto por su dorsal.
+     *
+     * @param dorsal Número de dorsal
+     * @return Optional con el piloto si existe
+     */
+    public Optional&lt;Piloto&gt; findByDorsal(String dorsal) {
+<span class="fc" id="L174">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc bfc" id="L176" title="All 4 branches covered.">            if (dorsal == null || dorsal.trim().isEmpty()) {</span>
+<span class="fc" id="L177">                logger.debug(&quot;Entrada nula o vacía, devolviendo Optional vacío&quot;);</span>
+<span class="fc" id="L178">                return Optional.empty();</span>
+            }
+<span class="fc" id="L180">            TypedQuery&lt;Piloto&gt; query = em.createQuery(</span>
+                    &quot;SELECT p FROM Piloto p LEFT JOIN FETCH p.constructor WHERE p.dorsal = :dorsal&quot;,
+                    Piloto.class
+            );
+<span class="fc" id="L184">            query.setParameter(&quot;dorsal&quot;, dorsal);</span>
+<span class="fc" id="L185">            return query.getResultStream().findFirst();</span>
+<span class="nc" id="L186">        } catch (Exception e) {</span>
+<span class="nc" id="L187">            logger.error(&quot;Error al buscar piloto por dorsal: &quot; + dorsal, e);</span>
+<span class="nc" id="L188">            return Optional.empty();</span>
+        } finally {
+<span class="fc" id="L190">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Guarda un nuevo piloto en la base de datos.
+     *
+     * @param piloto Piloto a guardar
+     * @return Piloto guardado con ID asignado
+     */
+    public Piloto save(Piloto piloto) {
+<span class="fc" id="L201">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L203">            em.getTransaction().begin();</span>
+<span class="fc" id="L204">            em.persist(piloto);</span>
+<span class="fc" id="L205">            em.getTransaction().commit();</span>
+<span class="fc" id="L206">            logger.info(&quot;Piloto guardado exitosamente: {} (ID: {})&quot;, piloto.getNombre(), piloto.getId());</span>
+<span class="fc" id="L207">            return piloto;</span>
+<span class="fc" id="L208">        } catch (Exception e) {</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="fc" id="L210">                em.getTransaction().rollback();</span>
+            }
+<span class="fc" id="L212">            logger.error(&quot;Error al guardar piloto: &quot; + piloto.getNombre(), e);</span>
+<span class="fc" id="L213">            throw new RuntimeException(&quot;Error al guardar piloto&quot;, e);</span>
+        } finally {
+<span class="fc" id="L215">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Actualiza un piloto existente.
+     *
+     * @param piloto Piloto con datos actualizados
+     * @return Piloto actualizado
+     */
+    public Piloto update(Piloto piloto) {
+<span class="fc" id="L226">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+            // Validación de parámetros
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">            if (piloto == null) {</span>
+<span class="nc" id="L230">                throw new RuntimeException(&quot;El piloto no puede ser nulo&quot;);</span>
+            }
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">            if (piloto.getId() == null) {</span>
+<span class="nc" id="L233">                throw new RuntimeException(&quot;El piloto debe tener un ID válido para actualizar&quot;);</span>
+            }
+
+<span class="fc" id="L236">            em.getTransaction().begin();</span>
+
+            // Verificar que el piloto existe antes de actualizar
+<span class="fc" id="L239">            Piloto existingPiloto = em.find(Piloto.class, piloto.getId());</span>
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">            if (existingPiloto == null) {</span>
+<span class="nc" id="L241">                em.getTransaction().rollback();</span>
+<span class="nc" id="L242">                logger.warn(&quot;No se encontró piloto con ID: {}&quot;, piloto.getId());</span>
+<span class="nc" id="L243">                throw new RuntimeException(&quot;No se puede actualizar un piloto que no existe (ID: &quot; + piloto.getId() + &quot;)&quot;);</span>
+            }
+
+            // Actualizar los datos
+<span class="fc" id="L247">            existingPiloto.setNombre(piloto.getNombre());</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">            if (piloto.getDorsal() != null) {</span>
+<span class="fc" id="L249">                existingPiloto.setDorsal(piloto.getDorsal());</span>
+            }
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">            if (piloto.getNacionalidad() != null) {</span>
+<span class="fc" id="L252">                existingPiloto.setNacionalidad(piloto.getNacionalidad());</span>
+            }
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">            if (piloto.getConstructor() != null) {</span>
+<span class="fc" id="L255">                existingPiloto.setConstructor(piloto.getConstructor());</span>
+            }
+
+<span class="fc" id="L258">            Piloto updated = em.merge(existingPiloto);</span>
+<span class="fc" id="L259">            em.getTransaction().commit();</span>
+
+<span class="fc" id="L261">            logger.info(&quot;Piloto actualizado exitosamente: {} (ID: {})&quot;, updated.getNombre(), updated.getId());</span>
+<span class="fc" id="L262">            return updated;</span>
+<span class="nc" id="L263">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L265">                em.getTransaction().rollback();</span>
+            }
+<span class="nc bnc" id="L267" title="All 2 branches missed.">            logger.error(&quot;Error al actualizar piloto: &quot; + (piloto != null ? piloto.getNombre() : &quot;null&quot;), e);</span>
+<span class="nc" id="L268">            throw new RuntimeException(&quot;Error al actualizar piloto&quot;, e);</span>
+        } finally {
+<span class="fc" id="L270">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Elimina un piloto por su ID.
+     *
+     * @param id ID del piloto a eliminar
+     * @return true si se eliminó, false si no existía
+     */
+    public boolean delete(Long id) {
+<span class="fc" id="L281">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L283">            em.getTransaction().begin();</span>
+<span class="fc" id="L284">            Piloto piloto = em.find(Piloto.class, id);</span>
+<span class="fc bfc" id="L285" title="All 2 branches covered.">            if (piloto != null) {</span>
+<span class="fc" id="L286">                em.remove(piloto);</span>
+<span class="fc" id="L287">                em.getTransaction().commit();</span>
+<span class="fc" id="L288">                logger.info(&quot;Piloto eliminado: {} (ID: {})&quot;, piloto.getNombre(), id);</span>
+<span class="fc" id="L289">                return true;</span>
+            } else {
+<span class="fc" id="L291">                em.getTransaction().rollback();</span>
+<span class="fc" id="L292">                logger.warn(&quot;No se encontró piloto con ID: {}&quot;, id);</span>
+<span class="fc" id="L293">                return false;</span>
+            }
+<span class="nc" id="L295">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">            if (em.getTransaction().isActive()) {</span>
+<span class="nc" id="L297">                em.getTransaction().rollback();</span>
+            }
+<span class="nc" id="L299">            logger.error(&quot;Error al eliminar piloto con ID: &quot; + id, e);</span>
+<span class="nc" id="L300">            throw new RuntimeException(&quot;Error al eliminar piloto&quot;, e);</span>
+        } finally {
+<span class="fc" id="L302">            JPAUtil.close(em);</span>
+        }
+    }
+
+    /**
+     * Cuenta el total de pilotos en la base de datos.
+     *
+     * @return Número total de pilotos
+     */
+    public long count() {
+<span class="fc" id="L312">        EntityManager em = JPAUtil.getEntityManager();</span>
+        try {
+<span class="fc" id="L314">            TypedQuery&lt;Long&gt; query = em.createQuery(</span>
+                    &quot;SELECT COUNT(p) FROM Piloto p&quot;,
+                    Long.class
+            );
+<span class="fc" id="L318">            return query.getSingleResult();</span>
+<span class="nc" id="L319">        } catch (Exception e) {</span>
+<span class="nc" id="L320">            logger.error(&quot;Error al contar pilotos&quot;, e);</span>
+<span class="nc" id="L321">            return 0;</span>
+        } finally {
+<span class="fc" id="L323">            JPAUtil.close(em);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
