@@ -1,7 +1,7 @@
 package co.com.dao;
 
 import co.com.model.Carrera;
-import co.com.util.JPAUtil;
+import co.com.util.DatabaseManager;  // Mejora: Importar la nueva clase de gestión de conexiones
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
@@ -17,6 +17,7 @@ import java.util.Optional;
  */
 public class CarreraDAO {
     private static final Logger logger = LoggerFactory.getLogger(CarreraDAO.class);
+    private final DatabaseManager dbManager = new DatabaseManager();  // Mejora: Inyectar DatabaseManager para DIP y SRP
 
     /**
      * Obtiene todas las carreras ordenadas por fecha.
@@ -24,7 +25,7 @@ public class CarreraDAO {
      * @return Lista de todas las carreras
      */
     public List<Carrera> findAll() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();  // Mejora: Usar dbManager en lugar de JPAUtil directamente
         try {
             TypedQuery<Carrera> query = em.createQuery(
                     "SELECT c FROM Carrera c ORDER BY c.fecha",
@@ -37,7 +38,7 @@ public class CarreraDAO {
             logger.error("Error al listar carreras", e);
             throw new RuntimeException("Error al obtener carreras", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);  // Mejora: Usar dbManager para cerrar
         }
     }
 
@@ -47,7 +48,7 @@ public class CarreraDAO {
      * @return Lista de carreras de esa temporada
      */
     public List<Carrera> findByTemporada(Integer anio) {  // Renombrado lógicamente, pero puedes mantener el nombre si quieres
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();  // Mejora: Usar dbManager
         try {
             TypedQuery<Carrera> query = em.createQuery(
                     "SELECT c FROM Carrera c JOIN FETCH c.circuito JOIN c.temporada t WHERE t.anio = :anio ORDER BY c.gpNumero",
@@ -61,7 +62,7 @@ public class CarreraDAO {
             logger.error("Error al listar carreras por temporada: " + anio, e);
             throw new RuntimeException("Error al obtener carreras de la temporada", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -72,7 +73,7 @@ public class CarreraDAO {
      * @return Optional con la carrera si existe
      */
     public Optional<Carrera> findById(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Carrera> query = em.createQuery(
                     "SELECT c FROM Carrera c JOIN FETCH c.temporada JOIN FETCH c.circuito WHERE c.id = :id",
@@ -89,7 +90,7 @@ public class CarreraDAO {
             logger.error("Error al buscar carrera por ID: " + id, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -100,7 +101,7 @@ public class CarreraDAO {
      * @return Lista de carreras que coinciden
      */
     public List<Carrera> findByNombreGp(String nombre) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             // Validar entrada nula o vacía
             if (nombre == null || nombre.trim().isEmpty()) {
@@ -118,7 +119,7 @@ public class CarreraDAO {
             logger.error("Error al buscar carreras por nombre: " + nombre, e);
             throw new RuntimeException("Error al buscar carreras por nombre", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -129,7 +130,7 @@ public class CarreraDAO {
      * @return Carrera guardada con ID asignado
      */
     public Carrera save(Carrera carrera) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             // Validación de campos obligatorios
             if (carrera == null) {
@@ -161,7 +162,7 @@ public class CarreraDAO {
             logger.error("Error al guardar carrera: " + carrera.getNombreGp(), e);
             throw new RuntimeException("Error al guardar carrera", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -172,7 +173,7 @@ public class CarreraDAO {
      * @return Carrera actualizada
      */
     public Carrera update(Carrera carrera) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             Carrera updated = em.merge(carrera);
@@ -187,7 +188,7 @@ public class CarreraDAO {
             logger.error("Error al actualizar carrera: " + carrera.getNombreGp(), e);
             throw new RuntimeException("Error al actualizar carrera", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -198,7 +199,7 @@ public class CarreraDAO {
      * @return true si se eliminó, false si no existía
      */
     public boolean delete(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             Carrera carrera = em.find(Carrera.class, id);
@@ -219,7 +220,7 @@ public class CarreraDAO {
             logger.error("Error al eliminar carrera con ID: " + id, e);
             throw new RuntimeException("Error al eliminar carrera", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -229,7 +230,7 @@ public class CarreraDAO {
      * @return Número total de carreras
      */
     public long count() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
                     "SELECT COUNT(c) FROM Carrera c",
@@ -240,7 +241,7 @@ public class CarreraDAO {
             logger.error("Error al contar carreras", e);
             return 0;
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 }

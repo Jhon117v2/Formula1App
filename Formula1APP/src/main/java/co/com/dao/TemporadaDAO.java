@@ -1,7 +1,7 @@
 package co.com.dao;
 
 import co.com.model.Temporada;
-import co.com.util.JPAUtil;
+import co.com.util.DatabaseManager;  // Mejora: Importar la nueva clase de gestión de conexiones
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
@@ -12,6 +12,7 @@ import java.util.Optional;
 
 public class TemporadaDAO {
     private static final Logger logger = LoggerFactory.getLogger(TemporadaDAO.class);
+    private final DatabaseManager dbManager = new DatabaseManager();  // Mejora: Inyectar DatabaseManager para DIP y SRP
 
     /**
      * Obtiene todas las temporadas ordenadas por año descendente.
@@ -19,7 +20,7 @@ public class TemporadaDAO {
      * @return Lista de todas las temporadas
      */
     public List<Temporada> findAll() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Temporada> query = em.createQuery(
                     "SELECT t FROM Temporada t ORDER BY t.anio DESC",
@@ -32,7 +33,7 @@ public class TemporadaDAO {
             logger.error("Error al listar temporadas", e);
             throw new RuntimeException("Error al obtener temporadas", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -43,7 +44,7 @@ public class TemporadaDAO {
      * @return Optional con la temporada si existe
      */
     public Optional<Temporada> findById(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             Temporada temporada = em.find(Temporada.class, id);
             if (temporada != null) {
@@ -56,7 +57,7 @@ public class TemporadaDAO {
             logger.error("Error al buscar temporada por ID: " + id, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -68,7 +69,7 @@ public class TemporadaDAO {
      * @return Optional con la temporada si existe
      */
     public Optional<Temporada> findByAnio(Integer anio) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Temporada> query = em.createQuery(
                     "SELECT t FROM Temporada t WHERE t.anio = :anio",
@@ -88,7 +89,7 @@ public class TemporadaDAO {
             logger.error("Error al buscar temporada por año: " + anio, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -100,7 +101,7 @@ public class TemporadaDAO {
      * @return Lista de temporadas en el rango
      */
     public List<Temporada> findByRangoAnios(Integer anioInicio, Integer anioFin) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Temporada> query = em.createQuery(
                     "SELECT t FROM Temporada t WHERE t.anio BETWEEN :inicio AND :fin ORDER BY t.anio DESC",
@@ -116,7 +117,7 @@ public class TemporadaDAO {
             logger.error("Error al buscar temporadas por rango", e);
             throw new RuntimeException("Error al buscar temporadas por rango", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -126,7 +127,7 @@ public class TemporadaDAO {
      * @return Optional con la temporada más reciente
      */
     public Optional<Temporada> findMasReciente() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Temporada> query = em.createQuery(
                     "SELECT t FROM Temporada t ORDER BY t.anio DESC",
@@ -144,7 +145,7 @@ public class TemporadaDAO {
             logger.error("Error al buscar temporada más reciente", e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -155,7 +156,7 @@ public class TemporadaDAO {
      * @return true si existe, false en caso contrario
      */
     public boolean existeTemporada(Integer anio) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
                     "SELECT COUNT(t) FROM Temporada t WHERE t.anio = :anio",
@@ -172,7 +173,7 @@ public class TemporadaDAO {
             logger.error("Error al verificar existencia de temporada: " + anio, e);
             return false;
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -183,7 +184,7 @@ public class TemporadaDAO {
      * @return Temporada guardada con ID asignado
      */
     public Temporada save(Temporada temporada) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -212,7 +213,7 @@ public class TemporadaDAO {
             logger.error("Error al guardar temporada: " + temporada.getAnio(), e);
             throw new RuntimeException("Error al guardar temporada", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -242,7 +243,7 @@ public class TemporadaDAO {
      * @return Temporada actualizada
      */
     public Temporada update(Temporada temporada) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             Temporada updated = em.merge(temporada);
@@ -257,7 +258,7 @@ public class TemporadaDAO {
             logger.error("Error al actualizar temporada: " + temporada.getAnio(), e);
             throw new RuntimeException("Error al actualizar temporada", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -270,7 +271,7 @@ public class TemporadaDAO {
      * @return true si se eliminó, false si no existía
      */
     public boolean delete(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             Temporada temporada = em.find(Temporada.class, id);
@@ -304,7 +305,7 @@ public class TemporadaDAO {
             logger.error("Error al eliminar temporada con ID: " + id, e);
             throw new RuntimeException("Error al eliminar temporada. Puede tener carreras asociadas.", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -329,7 +330,7 @@ public class TemporadaDAO {
      * @return Número total de temporadas
      */
     public long count() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
                     "SELECT COUNT(t) FROM Temporada t",
@@ -342,7 +343,7 @@ public class TemporadaDAO {
             logger.error("Error al contar temporadas", e);
             return 0;
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -353,7 +354,7 @@ public class TemporadaDAO {
      * @return Número de carreras
      */
     public long contarCarrerasPorTemporada(Integer anio) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
                     "SELECT COUNT(c) FROM Carrera c WHERE c.temporada.anio = :anio",
@@ -367,7 +368,7 @@ public class TemporadaDAO {
             logger.error("Error al contar carreras de temporada: " + anio, e);
             return 0;
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -378,7 +379,7 @@ public class TemporadaDAO {
      * @return Array con: [carreras, resultados, pilotos únicos]
      */
     public long[] obtenerEstadisticas(Integer anio) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             // Carreras
             TypedQuery<Long> queryCarreras = em.createQuery(
@@ -412,7 +413,7 @@ public class TemporadaDAO {
             logger.error("Error al obtener estadísticas de temporada: " + anio, e);
             return new long[]{0, 0, 0};
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 }

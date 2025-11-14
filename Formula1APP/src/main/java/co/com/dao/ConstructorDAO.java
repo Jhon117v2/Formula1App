@@ -1,7 +1,7 @@
 package co.com.dao;
 
 import co.com.model.Constructor;
-import co.com.util.JPAUtil;
+import co.com.util.DatabaseManager;  // Mejora: Importar la nueva clase de gestión de conexiones
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
@@ -16,6 +16,7 @@ import java.util.Optional;
  */
 public class ConstructorDAO {
     private static final Logger logger = LoggerFactory.getLogger(ConstructorDAO.class);
+    private final DatabaseManager dbManager = new DatabaseManager();  // Mejora: Inyectar DatabaseManager para DIP y SRP
 
     /**
      * Obtiene todos los constructores ordenados por nombre.
@@ -24,7 +25,7 @@ public class ConstructorDAO {
      * @return Lista de todos los constructores
      */
     public List<Constructor> findAll() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Constructor> query = em.createQuery(
                     "SELECT DISTINCT c FROM Constructor c LEFT JOIN FETCH c.pilotos ORDER BY c.nombre",
@@ -37,7 +38,7 @@ public class ConstructorDAO {
             logger.error("Error al listar constructores", e);
             throw new RuntimeException("Error al obtener constructores", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -48,7 +49,7 @@ public class ConstructorDAO {
      * @return Optional con el constructor si existe
      */
     public Optional<Constructor> findById(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Constructor> query = em.createQuery(
                     "SELECT c FROM Constructor c LEFT JOIN FETCH c.pilotos WHERE c.id = :id",
@@ -68,7 +69,7 @@ public class ConstructorDAO {
             logger.error("Error al buscar constructor por ID: " + id, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -79,7 +80,7 @@ public class ConstructorDAO {
      * @return Optional con el constructor si existe
      */
     public Optional<Constructor> findByNombre(String nombre) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             if (nombre == null || nombre.trim().isEmpty()) {
                 logger.debug("Entrada nula o vacía, devolviendo Optional vacío");
@@ -105,7 +106,7 @@ public class ConstructorDAO {
             logger.error("Error al buscar constructor por nombre: " + nombre, e);
             return Optional.empty();
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -116,7 +117,7 @@ public class ConstructorDAO {
      * @return Lista de constructores con esa nacionalidad
      */
     public List<Constructor> findByNacionalidad(String nacionalidad) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             if (nacionalidad == null || nacionalidad.trim().isEmpty()) {
                 logger.debug("Entrada nula o vacía, devolviendo lista vacía");
@@ -133,7 +134,7 @@ public class ConstructorDAO {
             logger.error("Error al buscar constructores por nacionalidad: " + nacionalidad, e);
             throw new RuntimeException("Error al buscar constructores por nacionalidad", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -144,7 +145,7 @@ public class ConstructorDAO {
      * @return Constructor guardado con ID asignado
      */
     public Constructor save(Constructor constructor) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(constructor);
@@ -159,7 +160,7 @@ public class ConstructorDAO {
             logger.error("Error al guardar constructor: " + constructor.getNombre(), e);
             throw new RuntimeException("Error al guardar constructor", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -170,7 +171,7 @@ public class ConstructorDAO {
      * @return Constructor actualizado
      */
     public Constructor update(Constructor constructor) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             // Validación de parámetros
             if (constructor == null) {
@@ -209,7 +210,7 @@ public class ConstructorDAO {
             logger.error("Error al actualizar constructor: " + (constructor != null ? constructor.getNombre() : "null"), e);
             throw new RuntimeException("Error al actualizar constructor", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -221,7 +222,7 @@ public class ConstructorDAO {
      * @return true si se eliminó, false si no existía
      */
     public boolean delete(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             Constructor constructor = em.find(Constructor.class, id);
@@ -242,7 +243,7 @@ public class ConstructorDAO {
             logger.error("Error al eliminar constructor con ID: " + id, e);
             throw new RuntimeException("Error al eliminar constructor. Puede tener pilotos asociados.", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -252,7 +253,7 @@ public class ConstructorDAO {
      * @return Número total de constructores
      */
     public long count() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
                     "SELECT COUNT(c) FROM Constructor c",
@@ -263,7 +264,7 @@ public class ConstructorDAO {
             logger.error("Error al contar constructores", e);
             return 0;
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 }

@@ -73,7 +73,7 @@ public class SimulacionService {
         for (int i = 0; i < Math.min(2, carrerasPosteriores.size()); i++) {
             Carrera carrera = carrerasPosteriores.get(i);
 
-            logger.info("➡️ Simulando carrera posterior a la congelación: {} (ID: {}, Fecha: {})",
+            logger.info(" Simulando carrera posterior a la congelación: {} (ID: {}, Fecha: {})",
                     carrera.getNombreGp(), carrera.getId(), carrera.getFecha());
 
             simularCarrera(carrera);
@@ -81,7 +81,7 @@ public class SimulacionService {
             carrerasSimuladas.add(carrera);
         }
 
-        // Guardamos las últimas simuladas para consultarlas luego con la opción 9
+        // Guardamos las últimas simuladas para consultarlas luego con la opción 8
         ultimasCarrerasSimuladas.clear();
         ultimasCarrerasSimuladas.addAll(carrerasSimuladas);
 
@@ -185,7 +185,7 @@ public class SimulacionService {
      */
     public void mostrarUltimosResultadosSimulados() {
         if (ultimasCarrerasSimuladas.isEmpty()) {
-            System.out.println("\n[INFO] No hay simulaciones recientes. Ejecuta primero la opción 8.\n");
+            System.out.println("\n[INFO] No hay simulaciones recientes. Ejecuta primero la opción 7.\n");
             return;
         }
 

@@ -5,8 +5,8 @@ import java.time.LocalDate;
 public class ConfiguracionTemporada {
 
     // Temporadas disponibles
-    public static final int TEMPORADA_2024 = 1;
-    public static final int TEMPORADA_2025 = 2;
+    public static final int TEMPORADA_2024 = 2024;
+    public static final int TEMPORADA_2025 = 2025;
     public static final int TEMPORADA_ACTUAL = TEMPORADA_2025;
 
     // Fecha de congelación del proyecto

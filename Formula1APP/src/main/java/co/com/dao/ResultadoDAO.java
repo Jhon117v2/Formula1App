@@ -1,8 +1,7 @@
 package co.com.dao;
 
 import co.com.model.Resultado;
-import co.com.util.JPAUtil;
-import co.com.util.JDBCUtil;
+import co.com.util.DatabaseManager;  // Mejora: Importar la nueva clase de gestión de conexiones
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
@@ -18,13 +17,14 @@ import java.util.Map;
 
 public class ResultadoDAO {
     private static final Logger logger = LoggerFactory.getLogger(ResultadoDAO.class);
+    private final DatabaseManager dbManager = new DatabaseManager();  // Mejora: Inyectar DatabaseManager para DIP y SRP
 
     public List<Resultado> findByCarrera(Long carreraId) {
         if (carreraId == null) {
             throw new RuntimeException("El ID de la carrera no puede ser nulo");
         }
 
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Resultado> query = em.createQuery(
                     "SELECT r FROM Resultado r " +
@@ -40,7 +40,7 @@ public class ResultadoDAO {
             logger.error("Error al listar resultados por carrera: " + carreraId, e);
             throw new RuntimeException("Error al obtener resultados", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -55,7 +55,7 @@ public class ResultadoDAO {
             throw new RuntimeException("El resultado debe tener un piloto asociado");
         }
 
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(resultado);
@@ -67,7 +67,7 @@ public class ResultadoDAO {
             }
             throw new RuntimeException("Error al guardar resultado", e);
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 
@@ -123,7 +123,7 @@ public class ResultadoDAO {
 
         List<Map<String, Object>> clasificacion = new ArrayList<>();
 
-        try (Connection conn = JDBCUtil.getConnection();
+        try (Connection conn = dbManager.getConnection();  // Mejora: Usar dbManager para obtener Connection
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, anio);
@@ -199,7 +199,7 @@ public class ResultadoDAO {
 
         List<Map<String, Object>> clasificacion = new ArrayList<>();
 
-        try (Connection conn = JDBCUtil.getConnection();
+        try (Connection conn = dbManager.getConnection();  // Mejora: Usar dbManager para obtener Connection
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, anio);
@@ -228,7 +228,7 @@ public class ResultadoDAO {
         }
     }
     public long countByCarrera(Long carreraId) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = dbManager.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
                     "SELECT COUNT(r) FROM Resultado r WHERE r.carrera.id = :carreraId",
@@ -240,7 +240,7 @@ public class ResultadoDAO {
             logger.error("Error al contar resultados de la carrera ID: {}", carreraId, e);
             return 0;
         } finally {
-            JPAUtil.close(em);
+            dbManager.closeEntityManager(em);
         }
     }
 }
